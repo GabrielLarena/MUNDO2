@@ -2,10 +2,15 @@
 
 - descrição -
 
+## Prerequisitos
+
+- NodeJS 
+
 ## Instruções de build
 
 ```bash
 $ git clone https://github.com/GabrielLarena/MUNDO2
+$ cd MUNDO2
 $ npm install
 $ node index.js
 ```
