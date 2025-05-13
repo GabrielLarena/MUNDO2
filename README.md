@@ -1,3 +1,22 @@
+# (Nome do projeto)
+
+- descrição -
+
+## Prerequisitos
+
+- NodeJS 
+
+## Instruções de build
+
+```bash
+$ git clone https://github.com/GabrielLarena/MUNDO2
+$ cd MUNDO2
+$ npm install
+$ node index.js
+```
+
+## Coisas...
+
 1. TACO (Tabela Brasileira de Composição de Alimentos) – Unicamp
 Tipo: Gratuito, oficial
 
