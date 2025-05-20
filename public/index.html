@@ -1,7 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Mundo 2</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Front Page</title>
+  <link rel="stylesheet" href="styles.css" />
+  
 </head>
-
 <body>
-    <h1>Mundo 2!</h1>
+  <header class="header">
+    <div class="logo">Dietamigo</div>
+    <button class="burger" id="burger" aria-label="Menu">
+  ☰
+</button>
+    <nav class="menu" id="menu">
+      <ul>
+        <li>🔐 Log In</li>
+        <li>ℹ️ Sobre nos</li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="main-container">
+
+      <!-- Section 1 -->
+  <section class="section">
+    <div class="text-content">
+      <h1>Descomplicando sua dieta!</h1>
+      <p>Calcule os carboidratos e nutrientes da suas refeições de maneira rápida e simples.</p>
+      <button class="cta">Calcule</button>
+    </div>
+    <div class="image-content">
+      <img src="img/hero-01.png" alt="Imagem Heroi" />
+    </div>
+  </section>
+
+  <!-- Section 2 -->
+  <section class="section">
+    <div class="image-content">
+      <img src="img/hero-02.png" alt="Imagem Secundária" />
+    </div>
+    <div class="text-content">
+      <h1>Planeje suas refeições</h1>
+      <p>Receba sugestões baseadas em seus objetivos nutricionais.</p>
+      <button class="cta">Explorar</button>
+    </div>
+  </section>
+
+  </main>
+
+  <script>
+    const burger = document.getElementById('burger');
+    const menu = document.getElementById('menu');
+
+    burger.addEventListener('click', () => {
+      menu.classList.toggle('show');
+    });
+  </script>
 </body>
+</html>
