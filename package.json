@@ -12,10 +12,10 @@
   },
   "license": "ISC",
   "author": "",
-  "type": "commonjs",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "node --experimental-sqlite index.js"
+    "start": "node --experimental-sqlite ./src/index.js"
   },
   "dependencies": {
     "express": "^5.1.0"
