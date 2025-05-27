@@ -15,7 +15,7 @@
 </button>
     <nav class="menu" id="menu">
       <ul>
-        <li>🔐 Log In</li>
+        <li>🔐 Fazer Login</li>
         <li>ℹ️ Sobre nos</li>
       </ul>
     </nav>
@@ -28,34 +28,29 @@
     <div class="text-content">
       <h1>Descomplicando sua dieta!</h1>
       <p>Calcule os carboidratos e nutrientes da suas refeições de maneira rápida e simples.</p>
-      <button class="cta">Calcule</button>
+      <button id="btn-navegar" data-pagina="calcula-pratos.html" 
+      class="btn-navegar">Calcule</button>
     </div>
     <div class="image-content">
-      <img src="img/hero-01.png" alt="Imagem Heroi" />
+      <img src="../img/hero-01.jpg" alt="Imagem Heroi" />
     </div>
   </section>
 
   <!-- Section 2 -->
   <section class="section">
     <div class="image-content">
-      <img src="img/hero-02.png" alt="Imagem Secundária" />
+      <img src="../img/hero-02.jpg" alt="Imagem Secundária" />
     </div>
     <div class="text-content">
       <h1>Planeje suas refeições</h1>
       <p>Receba sugestões baseadas em seus objetivos nutricionais.</p>
-      <button class="cta">Explorar</button>
+      <button id="planejar-refeicao" data-pagina="planejar-refeicao.html" 
+      class="btn-navegar">Explorar</button>
     </div>
   </section>
 
   </main>
 
-  <script>
-    const burger = document.getElementById('burger');
-    const menu = document.getElementById('menu');
-
-    burger.addEventListener('click', () => {
-      menu.classList.toggle('show');
-    });
-  </script>
+  <script src="../scripts/scripts.js"></script>
 </body>
 </html>

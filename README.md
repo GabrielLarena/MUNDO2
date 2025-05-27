@@ -15,6 +15,16 @@ $ npm install
 $ node index.js
 ```
 
+### Executando via servidor local
+
+Na pasta raiz:
+
+```python -m http.server```
+
+No navegador:
+
+```http://localhost:8000/public/```
+
 ## Coisas...
 
 1. TACO (Tabela Brasileira de Composição de Alimentos) – Unicamp
