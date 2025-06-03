@@ -12,7 +12,7 @@
 $ git clone https://github.com/GabrielLarena/MUNDO2
 $ cd MUNDO2
 $ npm install
-$ node index.js
+$ npm start
 ```
 
 ## Coisas...
