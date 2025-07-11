@@ -3,20 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Front Page</title>
+  <title>Página Inicial</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
   <header class="header">
     <div class="logo">
-      <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+      <a href="index.html">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+      </a>
     </div>
     <button class="burger" id="burger" aria-label="Menu">
       <i class="fas fa-bars"></i>
     </button>
     <nav class="menu" id="menu">
       <ul>
+        <li><a href="index.html">🏠 Página Inicial</a></li>
         <li><a href="login.html">🔐 Log In</a></li>
         <li><a href="calculo.html">🥗 Dieta</a></li>
         <li><a href="refeicao.html">🍽️ Pratos</a></li>
@@ -69,7 +72,9 @@
   <footer class="footer">
     <div class="footer-top">
       <div class="footer-left">
-        <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
+        <a href="index.html">
+          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
+        </a>
         <div class="footer-socials">
           <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
           <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
@@ -79,27 +84,12 @@
       <div class="footer-links">
         <a href="sobre.html">Sobre nós</a>
         <a href="carreira.html">Carreiras</a>
-        <a href="privacidade.html">Política de privacidade</a>
+        <a href="#">Política de privacidade</a>
       </div>
     </div>
     <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
   </footer>
 
-  <script>
-    const burger = document.getElementById('burger');
-    const menu = document.getElementById('menu');
-    
-    //Abrir Menu//
-    burger.addEventListener('click', () => {
-      menu.classList.toggle('show');
-    });
-    
-    //Desligar Menu ao clicar fora//
-    document.addEventListener('click', (e) => {
-    if (!menu.contains(e.target) && !burger.contains(e.target)) {
-      menu.classList.remove('show');
-    }
-    });
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>

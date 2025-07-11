@@ -5,13 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Planejamento - Dietamigo</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+
 </head>
 <body>
   <header class="header">
-    <div class="logo">Dietamigo</div>
-    <a href="index.html" class="cta">Voltar</a>
+    <div class="logo">
+      <a href="index.html">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+      </a>
+    </div>
+    <button class="burger" id="burger" aria-label="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="index.html">🏠 Página Inicial</a></li>
+        <li><a href="login.html">🔐 Log In</a></li>
+        <li><a href="calculo.html">🥗 Dieta</a></li>
+        <li><a href="refeicao.html">🍽️ Pratos</a></li>
+        <li><a href="carreira.html">👔 Carreiras</a></li>
+        <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
+      </ul>
+       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+    </nav>
   </header>
-
+  
   <main class="main-container">
     <section class="section">
       <div class="text-content">
@@ -21,5 +40,28 @@
       </div>
     </section>
   </main>
+  
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-left">
+        <a href="index.html">
+          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
+        </a>
+        <div class="footer-socials">
+          <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
+          <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
+          <a href="#" aria-label="YouTube"><i class="fab fa-youtube social-icon"></i></a>
+        </div>
+      </div>
+      <div class="footer-links">
+        <a href="sobre.html">Sobre nós</a>
+        <a href="carreira.html">Carreiras</a>
+        <a href="#">Política de privacidade</a>
+      </div>
+    </div>
+    <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
+  </footer>
+  
+  <script src="script.js"></script>
 </body>
 </html>
