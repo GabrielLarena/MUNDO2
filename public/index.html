@@ -9,16 +9,21 @@
 </head>
 <body>
   <header class="header">
-    <div class="logo">Dietamigo</div>
+    <div class="logo">
+      <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+    </div>
     <button class="burger" id="burger" aria-label="Menu">
       <i class="fas fa-bars"></i>
     </button>
     <nav class="menu" id="menu">
       <ul>
         <li><a href="login.html">🔐 Log In</a></li>
-        <li><a href="carreiras.html">👔 Carreiras</a></li>
+        <li><a href="calculo.html">🥗 Dieta</a></li>
+        <li><a href="refeicao.html">🍽️ Pratos</a></li>
+        <li><a href="carreira.html">👔 Carreiras</a></li>
         <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
       </ul>
+       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
     </nav>
   </header>
 
@@ -28,9 +33,7 @@
       <div class="text-content">
         <h1>Descomplicando sua dieta!</h1>
         <p>Calcule os carboidratos e nutrientes da suas refeições de maneira rápida e simples.</p>
-        <a href="calculo.html">
-          <button class="cta">Calcule</button>
-        </a>
+        <a href="calculo.html" class="cta">Explorar</a>
       </div>
       <div class="image-content">
         <img src="img/hero-01.jpg" alt="Imagem Heroi" />
@@ -45,9 +48,7 @@
       <div class="text-content">
         <h1>Planeje suas refeições</h1>
         <p>Receba sugestões baseadas em seus objetivos nutricionais.</p>
-        <a href="refeicao.html">
-          <button class="cta right">Explorar</button>
-        </a>
+        <a href="refeicao.html" class="cta right">Explorar</a>
       </div>
     </section>
 
@@ -56,9 +57,8 @@
       <div class="text-content">
         <h1>Calendário de Planejamento</h1>
         <p>Visualize e organize suas refeições e remedios ao longo da semana.</p>
-        <a href="calendario.html">
-          <button class="cta">Planejar</button>
-        </a>
+        <a href="calendario.html" class="cta">Explorar</a>
+      </div>
       <div class="image-content">
         <img src="img/hero-04.jpg" alt="Imagem Calendário" />
       </div>
@@ -78,7 +78,7 @@
       </div>
       <div class="footer-links">
         <a href="sobre.html">Sobre nós</a>
-        <a href="carreiras.html">Carreiras</a>
+        <a href="carreira.html">Carreiras</a>
         <a href="privacidade.html">Política de privacidade</a>
       </div>
     </div>
@@ -88,9 +88,17 @@
   <script>
     const burger = document.getElementById('burger');
     const menu = document.getElementById('menu');
-
+    
+    //Abrir Menu//
     burger.addEventListener('click', () => {
       menu.classList.toggle('show');
+    });
+    
+    //Desligar Menu ao clicar fora//
+    document.addEventListener('click', (e) => {
+    if (!menu.contains(e.target) && !burger.contains(e.target)) {
+      menu.classList.remove('show');
+    }
     });
   </script>
 </body>

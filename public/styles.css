@@ -19,6 +19,7 @@
 
 body {
   font-family: sans-serif;
+  font-size: 1rem;
   background: var(--light);
   color: #333;
 }
@@ -34,6 +35,8 @@ body {
 }
 
 .logo {
+  height: 40px;
+  width: auto;
   font-size: 1.5rem;
   font-weight: bold;
 }
@@ -57,7 +60,7 @@ body {
   padding: 2rem 1rem;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 1rem;
   transition: right 0.3s ease;
   z-index: 1000;
@@ -90,6 +93,13 @@ body {
   padding: 2rem;
 }
 
+.menu-logo {
+  width: 100px;
+  align-self: center;
+  margin-top: auto;
+  padding-top: 2rem;
+}
+
 .section {
   display: flex;
   flex-wrap: wrap;
@@ -97,7 +107,7 @@ body {
   justify-content: center;
   gap: 2rem;
   padding: 2rem 0;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 2px solid #ddd;
 }
 
 .section:last-of-type {
@@ -114,7 +124,7 @@ body {
 }
 
 .text-content h1 {
-  font-size: 2rem;
+  font-size: 1.7rem;
   margin-bottom: 1rem;
 }
 
@@ -122,10 +132,15 @@ body {
   margin-bottom: 1rem;
 }
 
-.cta {
+.cta,
+.cta:link,
+.cta:visited {
+  display: inline-block;
+  font-size: 1rem;
   padding: 0.75rem 1.5rem;
   background-color: var(--secondary);
   color: white;
+  text-decoration: none;
   border: none;
   border-radius: 0.25rem;
   cursor: pointer;
