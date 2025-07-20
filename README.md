@@ -1,6 +1,6 @@
-# (Nome do projeto)
+# Dietamigo
 
-- descrição -
+Aplicação destinada para a disciplina Projeto de Desenvolvimento Tecnológico para o Mundo II - 2025.1
 
 ## Prerequisitos
 
