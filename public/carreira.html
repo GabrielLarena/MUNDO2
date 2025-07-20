@@ -34,12 +34,49 @@
   <main class="main-container">
     <section class="section">
       <div class="text-content">
-        <h1>Trabalhe Conosco</h1>
-        <p>Quer fazer parte do nosso time? Veja as vagas abertas e envie seu currículo!</p>
-        <button class="cta">Ver Vagas</button>
+        <h1>Trabalhe Conosco na Dietamigo</h1>
+        <p>Na Dietamigo, estamos construindo um futuro mais saudável, e queremos que você faça 
+          parte disso! Se você é apaixonado por tecnologia, bem-estar e quer ter um impacto 
+          real na vida das pessoas, seu lugar é aqui. Junte-se a uma equipe inovadora e 
+          ajude-nos a descomplicar a jornada de saúde e nutrição para nossos usuários.</p>
       </div>
     </section>
-  </main>
+
+    <section class="section" id="vagas">
+    <div class="text-content">
+      <h2>Coleções de Oportunidades</h2>
+      <p>Quer fazer parte do nosso time? Veja as vagas abertas e envie seu currículo!</p>
+
+      <div class="job-card-container">
+        
+        <div class="job-card">
+          <div class="content-area">
+            <h3>Nutricionista</h3>
+          </div>
+          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+        </div>
+        <div class="job-card">
+          <div class="content-area">
+            <h3>Analista de Marketing</h3>
+          </div>
+          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+        </div>
+        <div class="job-card">
+          <div class="content-area">
+            <h3>Analista de Testes (QA)</h3>
+          </div>
+          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+        </div>
+        <div class="job-card">
+          <div class="content-area">
+            <h3>Desenvolvedor(a) Front-End</h3>
+          </div>
+          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
   
   <footer class="footer">
     <div class="footer-top">
@@ -61,6 +98,25 @@
     </div>
     <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
   </footer>
+  
+  <div id="application-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Enviar Currículo</h2>
+            <p>Selecione seu currículo em formato PDF para se candidatar à vaga.</p>
+            <form id="application-form">
+                <div class="file-upload-wrapper">
+                    <input type="file" id="resume-upload" accept=".pdf" required>
+                    <label for="resume-upload" class="custom-file-upload">
+                        <i class="fas fa-cloud-upload-alt"></i> Escolher Arquivo PDF
+                    </label>
+                    <span id="file-name" class="file-name">Nenhum arquivo selecionado</span>
+                </div>
+                <button type="submit" class="cta">Enviar Candidatura</button>
+            </form>
+            <div id="upload-status" style="margin-top: 15px; color: green; font-weight: bold;"></div>
+        </div>
+    </div>
   
   <script src="script.js"></script>
 </body>
