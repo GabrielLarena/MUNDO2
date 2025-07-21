@@ -1,0 +1,135 @@
+<!-- Salve como public/calendario.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calendário</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .calendar {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      display: inline-block;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .header button {
+      background: #3f51b5;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .header h2 {
+      margin: 0;
+    }
+
+    .weekdays, .days {
+      display: grid;
+      grid-template-columns: repeat(7, 40px);
+      gap: 5px;
+      justify-content: center;
+    }
+
+    .weekdays div {
+      font-weight: bold;
+    }
+
+    .days div {
+      padding: 10px;
+      background: #e3e3e3;
+      border-radius: 5px;
+    }
+
+    .event-day {
+      background-color: #90ee90 !important;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="calendar">
+    <div class="header">
+      <button onclick="changeMonth(-1)">←</button>
+      <h2 id="monthYear"></h2>
+      <button onclick="changeMonth(1)">→</button>
+    </div>
+
+    <div class="weekdays">
+      <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+    </div>
+    <div class="days" id="calendarDays"></div>
+  </div>
+
+  <script>
+    const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+    let today = new Date();
+    let currentMonth = today.getMonth();
+    let currentYear = today.getFullYear();
+
+    async function fetchEventos(month, year) {
+      const res = await fetch(`/api/eventos?mes=${month + 1}&ano=${year}`);
+      const data = await res.json();
+      return data.map(e => parseInt(e.dia)); // apenas o número do dia
+    }
+
+    async function renderCalendar(month, year) {
+      const firstDay = new Date(year, month).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const eventos = await fetchEventos(month, year);
+
+      document.getElementById('monthYear').textContent = `${monthNames[month]} ${year}`;
+      const calendarDays = document.getElementById('calendarDays');
+      calendarDays.innerHTML = '';
+
+      for (let i = 0; i < firstDay; i++) {
+        calendarDays.appendChild(document.createElement('div'));
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayCell = document.createElement('div');
+        dayCell.textContent = day;
+        if (eventos.includes(day)) {
+          dayCell.classList.add('event-day');
+        }
+        calendarDays.appendChild(dayCell);
+      }
+    }
+
+    function changeMonth(offset) {
+      currentMonth += offset;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      } else if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      renderCalendar(currentMonth, currentYear);
+    }
+
+    renderCalendar(currentMonth, currentYear);
+  </script>
+
+</body>
+</html>
