@@ -53,25 +53,25 @@
           <div class="content-area">
             <h3>Nutricionista</h3>
           </div>
-          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+          <a href="#" class="cta small open-modal-btn" data-job-title="Nutricionista">Inscrever-se</a>
         </div>
         <div class="job-card">
           <div class="content-area">
             <h3>Analista de Marketing</h3>
           </div>
-          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+          <a href="#" class="cta small open-modal-btn" data-job-title="Analista de Marketing">Inscrever-se</a>
         </div>
         <div class="job-card">
           <div class="content-area">
             <h3>Analista de Testes (QA)</h3>
           </div>
-          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+          <a href="#" class="cta small open-modal-btn" data-job-title="Analista de Testes">Inscrever-se</a>
         </div>
         <div class="job-card">
           <div class="content-area">
             <h3>Desenvolvedor(a) Front-End</h3>
           </div>
-          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+          <a href="#" class="cta small open-modal-btn" data-job-title="Front-End">Inscrever-se</a>
         </div>
       </div>
     </div>
@@ -100,23 +100,23 @@
   </footer>
   
   <div id="application-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2>Enviar Currículo</h2>
-            <p>Selecione seu currículo em formato PDF para se candidatar à vaga.</p>
-            <form id="application-form">
-                <div class="file-upload-wrapper">
-                    <input type="file" id="resume-upload" accept=".pdf" required>
-                    <label for="resume-upload" class="custom-file-upload">
-                        <i class="fas fa-cloud-upload-alt"></i> Escolher Arquivo PDF
-                    </label>
-                    <span id="file-name" class="file-name">Nenhum arquivo selecionado</span>
-                </div>
-                <button type="submit" class="cta">Enviar Candidatura</button>
-            </form>
-            <div id="upload-status" style="margin-top: 15px; color: green; font-weight: bold;"></div>
-        </div>
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Faça sua candidatura</h2>
+        <p>Você está se candidatando para a vaga de: <strong id="selected-job-title"></strong></p> <p>Selecione seu currículo em formato PDF para se candidatar à vaga.</p>
+        <form id="application-form">
+            <input type="hidden" id="job-title-input" name="jobTitle"> <div class="file-upload-wrapper">
+                <input type="file" id="resume-upload" accept=".pdf" required>
+                <label for="resume-upload" class="custom-file-upload">
+                    <i class="fas fa-cloud-upload-alt"></i> Escolher Arquivo PDF
+                </label>
+                <span id="file-name" class="file-name">Nenhum arquivo selecionado</span>
+            </div>
+            <button type="submit" class="cta">Enviar Candidatura</button>
+        </form>
+        <div id="upload-status" style="margin-top: 15px; color: green; font-weight: bold;"></div>
     </div>
+  </div>
   
   <script src="script.js"></script>
 </body>
