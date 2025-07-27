@@ -1,0 +1,1019 @@
+// src/index.cjs
+require('dotenv').config();
+
+const express = require('express');
+const { auth } = require('express-oauth2-jwt-bearer');
+const { migrate } = require('./db/database.cjs');
+
+// --- Import Routers ---
+const profileRouter = require('./routes/profile.cjs');
+const glucoseRouter = require('./routes/glucose.cjs');
+const annotationsRouter = require('./routes/annotations.cjs');
+const remindersRouter = require('./routes/reminders.cjs');
+const foodLogRouter = require('./routes/food-log.cjs');
+const utilsRouter = require('./routes/utils.cjs');
+const foodItemsRouter = require('./routes/food-items.cjs');
+
+// --- Initialization ---
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+try {
+    migrate();
+} catch (error) {
+    console.error("Could not start server due to migration failure:", error.message);
+    process.exit(1);
+}
+
+// --- Auth0 Middleware ---
+const checkJwt = auth({
+  audience: process.env.AUTH0_AUDIENCE,
+  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
+  tokenSigningAlg: 'RS256'
+});
+
+// --- Middlewares ---
+app.use(express.json());
+app.use(express.static('public'));
+
+// --- API Router ---
+const apiRouter = express.Router();
+apiRouter.use(checkJwt);
+apiRouter.use('/profile', profileRouter);
+apiRouter.use('/glucose-reports', glucoseRouter);
+apiRouter.use('/annotations', annotationsRouter);
+apiRouter.use('/reminders', remindersRouter);
+apiRouter.use('/food-log', foodLogRouter);
+apiRouter.use('/food-items', foodItemsRouter);
+
+// Mount the API routers
+app.use('/api', apiRouter);
+app.use('/utils', utilsRouter);
+
+// --- Server Start ---
+app.listen(PORT, () => {
+  console.log(`Listening on port: ${PORT}`);
+});
+
+// src/models/.keep
+
+// src/db/database.cjs
+const { DatabaseSync } = require('node:sqlite');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const db = new DatabaseSync('database.sqlite');
+
+// Ensure info table exists and stores schema version
+function initInfoTable() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS info (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      schema_version TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )
+  `);
+
+  const row = db.prepare(`SELECT * FROM info WHERE id = 1`).get();
+
+  if (!row) {
+    db.prepare(`
+      INSERT INTO info (id, schema_version, updated_at) VALUES (1, '0.0.0', datetime('now'))
+    `).run();
+  }
+}
+
+// Simple semantic version comparison
+function versionCompare(v1, v2) {
+  const toNums = v => v.split('.').map(Number);
+  const [a1 = 0, b1 = 0, c1 = 0] = toNums(v1);
+  const [a2 = 0, b2 = 0, c2 = 0] = toNums(v2);
+
+  if (a1 !== a2) return a1 - a2;
+  if (b1 !== b2) return b1 - b2;
+  return c1 - c2;
+}
+
+function getCurrentVersion() {
+  const row = db.prepare(`SELECT schema_version FROM info WHERE id = 1`).get();
+  return row?.schema_version || '0.0.0';
+}
+
+function setVersion(version) {
+  db.prepare(`
+    UPDATE info SET schema_version = ?, updated_at = datetime('now') WHERE id = 1
+  `).run(version);
+}
+
+function getMigrations() {
+    const migrationsDir = path.join(__dirname, 'migrations');
+    const files = fs.readdirSync(migrationsDir);
+    const migrationFiles = files
+        .filter(file => file.endsWith('.up.sql'))
+        .map(file => {
+            // Extract version from filename like '001_..._up.sql' or '1.0.0_..._up.sql'
+            const versionMatch = file.match(/^(\d{1,3}(?:\.\d{1,3}){0,2})/);
+            if (!versionMatch) {
+                console.warn(`Skipping migration file with invalid name format: ${file}`);
+                return null;
+            }
+            const version = versionMatch[1].replace(/^(0{1,2})/, ''); // remove leading zeros for semver
+            const upPath = path.join(migrationsDir, file);
+            const sql = fs.readFileSync(upPath, 'utf-8');
+            return { version, sql };
+        })
+        .filter(Boolean); // Remove nulls
+
+    // Sort migrations by version
+    return migrationFiles.sort((a, b) => versionCompare(a.version, b.version));
+}
+
+
+function migrate() {
+  initInfoTable();
+  let currentVersion = getCurrentVersion();
+  const migrations = getMigrations();
+
+  console.log(`Current database version: ${currentVersion}`);
+
+  for (const { version, sql } of migrations) {
+    if (versionCompare(version, currentVersion) > 0) {
+      console.log(`Migrating to version ${version}...`);
+      try {
+        db.exec(sql);
+        setVersion(version);
+        currentVersion = version;
+        console.log(`Successfully migrated to version ${version}.`);
+      } catch (err) {
+        console.error(`Failed to migrate to version ${version}:`, err);
+        // Since we are in a transaction, the changes (including setVersion) should be rolled back.
+        // We stop the migration process immediately on failure.
+        throw new Error(`Migration failed at version ${version}.`);
+      }
+    }
+  }
+
+  console.log(`Database is up to date at version: ${currentVersion}`);
+}
+
+module.exports = { db, migrate };
+
+// src/db/migrations/1.0.0_init.up.sql
+-- Users table, id is the Auth0 subject identifier
+CREATE TABLE users (
+    id TEXT PRIMARY KEY NOT NULL, -- Corresponds to Auth0 'sub'
+    email TEXT NOT NULL UNIQUE,
+    name TEXT,
+    bio TEXT,
+    profile_picture_url TEXT,
+    age INTEGER,
+    gender TEXT,
+    weight_kg REAL
+);
+-- Glucose reports linked to a user
+CREATE TABLE glucose_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    reported_at TEXT NOT NULL DEFAULT (datetime('now')),
+    glucose_mg_dl INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+-- Profile annotations (e.g., medical history, notes) linked to a user
+CREATE TABLE profile_annotations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+-- Unified Reminders table for both one-time and recurring reminders
+-- If reminder_at IS NOT NULL: it's a one-time reminder scheduled for that datetime.
+-- If reminder_at IS NULL: it's a recurring reminder defined by time_of_day and days_of_week.
+CREATE TABLE reminders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    -- Fields for one-time reminders
+    reminder_at TEXT, -- Specific datetime for one-time reminders
+    -- Fields for recurring reminders
+    time_of_day TEXT, -- e.g., '08:00' (for recurring)
+    days_of_week TEXT, -- e.g., 'MON,WED,FRI' (for recurring)
+    -- Common fields
+    title TEXT NOT NULL,
+    description TEXT,
+    is_checked BOOLEAN NOT NULL DEFAULT 0, -- Applicable mainly to instances of recurring reminders shown on a specific date
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+-- A global catalog of food items (Updated Schema)
+CREATE TABLE food_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    energy_kcal_per_100g REAL NOT NULL, -- Energy in kcal per 100g
+    protein_g_per_100g REAL NOT NULL,   -- Protein in grams per 100g
+    carbs_g_per_100g REAL NOT NULL      -- Carbohydrates in grams per 100g
+);
+-- A log of food consumed by a user (Updated Schema)
+CREATE TABLE daily_food_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    log_date TEXT NOT NULL,             -- e.g., '2023-10-27'
+    food_item_id INTEGER NOT NULL,
+    weight_g REAL NOT NULL,             -- Weight of the food item consumed in grams
+    logged_at TEXT NOT NULL DEFAULT (datetime('now')), -- Timestamp when the item was logged
+    meal_group_id TEXT NOT NULL,        -- Identifier to group items into a "meal"
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (food_item_id) REFERENCES food_items (id)
+);
+-- Index for efficient querying by user and date
+CREATE INDEX idx_daily_food_log_user_date ON daily_food_log(user_id, log_date);
+
+// src/db/migrations/1.0.0_init.down.sql
+DROP TABLE IF EXISTS daily_food_log;
+DROP TABLE IF EXISTS food_items;
+DROP TABLE IF EXISTS recurring_reminders;
+DROP TABLE IF EXISTS reminders;
+DROP TABLE IF EXISTS profile_annotations;
+DROP TABLE IF EXISTS glucose_reports;
+DROP TABLE IF EXISTS users;
+
+// src/routes/reminders.cjs
+const express = require('express');
+const { db } = require('../db/database.cjs');
+
+const router = express.Router();
+
+// Helper function to calculate dates for a recurring reminder within a date range
+function getDatesForRecurringReminder(startDateStr, endDateStr, timeOfDay, daysOfWeekStr) {
+    const dates = [];
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    // Parse days of week string into a set of integers (0=Sunday, 6=Saturday)
+    const validDays = new Set(
+        daysOfWeekStr.split(',').map(day => {
+            const map = { 'SUN': 0, 'MON': 1, 'TUE': 2, 'WED': 3, 'THU': 4, 'FRI': 5, 'SAT': 6 };
+            return map[day.trim().toUpperCase()];
+        }).filter(d => d !== undefined)
+    );
+
+    if (validDays.size === 0) return dates; // Invalid days string
+
+    const timeParts = timeOfDay.split(':');
+    if (timeParts.length !== 2) return dates; // Invalid time format
+    const hours = parseInt(timeParts[0], 10);
+    const minutes = parseInt(timeParts[1], 10);
+    if (isNaN(hours) || isNaN(minutes)) return dates; // Invalid time values
+
+    const currentDate = new Date(startDate);
+    
+    // Adjust start date to the beginning of the week to ensure we catch weekly patterns correctly
+    // This loop ensures we start checking from a consistent point
+    while (currentDate <= endDate) {
+        const dayOfWeek = currentDate.getDay(); // 0 (Sunday) to 6 (Saturday)
+        
+        if (validDays.has(dayOfWeek)) {
+            // Set the time for this date instance
+            const instanceDate = new Date(currentDate);
+            instanceDate.setHours(hours, minutes, 0, 0); // Set hours and minutes, reset seconds/milliseconds
+            
+            // Only add if it's within our target range
+            if (instanceDate >= startDate && instanceDate <= endDate) {
+                dates.push(instanceDate.toISOString());
+            }
+        }
+        
+        // Move to the next day
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return dates;
+}
+
+
+/**
+ * GET /api/reminders?limit=<days>
+ * Fetches a unified list of reminders for the next <limit> days.
+ * Includes:
+ *   - One-time reminders scheduled within the period.
+ *   - Instances of recurring reminders that fall within the period.
+ * Each item in the returned list has a 'reminder_at' datetime.
+ * Recurring reminders will have a generated 'reminder_at' for each occurrence.
+ */
+router.get('/', (req, res) => {
+    const userId = req.auth.payload.sub;
+    const limitDays = parseInt(req.query.limit, 10) || 30;
+
+    // Define the date range: from now to now + limitDays
+    const now = new Date();
+    const startDateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const futureDate = new Date(now);
+    futureDate.setDate(futureDate.getDate() + limitDays);
+    const endDateStr = futureDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    let oneTimeReminders = [];
+    let recurringInstances = [];
+
+    try {
+        // 1. Fetch one-time reminders within the range
+        const oneTimeStmt = db.prepare(`
+            SELECT *, id as backend_id, 'one-time' as type FROM reminders
+            WHERE user_id = ? AND reminder_at IS NOT NULL AND date(reminder_at) >= date('now') AND date(reminder_at) <= date('now', '+' || ? || ' days')
+            ORDER BY reminder_at ASC
+        `);
+        oneTimeReminders = oneTimeStmt.all(userId, String(limitDays));
+
+        // 2. Fetch recurring reminders for the user
+        const recurringStmt = db.prepare(`
+            SELECT *, id as backend_id, 'recurring' as type FROM reminders
+            WHERE user_id = ? AND time_of_day IS NOT NULL AND days_of_week IS NOT NULL
+        `);
+        const recurringReminders = recurringStmt.all(userId);
+
+        // 3. Generate instances for recurring reminders
+        recurringReminders.forEach(reminder => {
+            const dates = getDatesForRecurringReminder(startDateStr, endDateStr, reminder.time_of_day, reminder.days_of_week);
+            dates.forEach(dateStr => {
+                // Create an instance object that looks like a regular reminder
+                // We can use a composite ID or a flag to distinguish it on the frontend if needed later
+                // For now, just make it look like a regular reminder with a calculated datetime
+                recurringInstances.push({
+                    ...reminder, // Include all fields from the recurring template
+                    id: `${reminder.backend_id}_${dateStr}`, // Unique ID for this instance
+                    reminder_at: dateStr, // The calculated datetime for this instance
+                    // title, description, is_checked are inherited from the template
+                });
+            });
+        });
+
+        // 4. Merge and sort the lists
+        const allReminders = [...oneTimeReminders, ...recurringInstances];
+        allReminders.sort((a, b) => new Date(a.reminder_at) - new Date(b.reminder_at));
+
+        res.json(allReminders);
+    } catch (err) {
+        console.error("Error fetching reminders:", err);
+        res.status(500).json({ message: "Internal server error while fetching reminders." });
+    }
+});
+
+/**
+ * POST /api/reminders
+ * Creates a new reminder.
+ * For one-time: { reminder_at: "YYYY-MM-DDTHH:MM:SS", title, description }
+ * For recurring: { time_of_day: "HH:MM", days_of_week: "MON,WED,FRI", title, description }
+ */
+router.post('/', (req, res) => {
+    const userId = req.auth.payload.sub;
+    const { reminder_at, time_of_day, days_of_week, title, description } = req.body;
+
+    // Basic validation: Must be one type or the other
+    const isOneTime = !!reminder_at;
+    const isRecurring = !!(time_of_day && days_of_week);
+
+    if (!(isOneTime || isRecurring) || (isOneTime && isRecurring)) {
+        return res.status(400).json({
+            message: "Invalid request. Provide either (reminder_at) for one-time OR (time_of_day AND days_of_week) for recurring reminder."
+        });
+    }
+
+    if (!title) {
+        return res.status(400).json({ message: "title is required." });
+    }
+
+    // Prepare SQL based on type
+    let stmt;
+    let params;
+    if (isOneTime) {
+        stmt = db.prepare('INSERT INTO reminders (user_id, reminder_at, title, description) VALUES (?, ?, ?, ?)');
+        params = [userId, reminder_at, title, description];
+    } else { // isRecurring
+        stmt = db.prepare('INSERT INTO reminders (user_id, time_of_day, days_of_week, title, description) VALUES (?, ?, ?, ?, ?)');
+        params = [userId, time_of_day, days_of_week, title, description];
+    }
+
+    try {
+        const info = stmt.run(...params);
+        const newReminder = db.prepare('SELECT * FROM reminders WHERE id = ?').get(info.lastInsertRowid);
+        res.status(201).json(newReminder);
+    } catch (err) {
+        console.error("Error creating reminder:", err);
+        res.status(500).json({ message: "Internal server error while creating reminder." });
+    }
+});
+
+/**
+ * PATCH /api/reminders/:id
+ * Updates a reminder. Can update title, description, is_checked.
+ * For one-time reminders, reminder_at can also be updated.
+ * For recurring reminders, time_of_day and days_of_week can also be updated.
+ * Note: The ID used here should be the original database ID, not the composite one generated for instances.
+ */
+router.patch('/:id', (req, res) => {
+    // Extract the actual database ID in case a composite ID was passed (though frontend should ideally use the real ID)
+    const rawId = req.params.id;
+    const parts = rawId.split('_');
+    const reminderId = parts[0]; // Use the first part as the actual ID
+
+    const userId = req.auth.payload.sub;
+    const { reminder_at, time_of_day, days_of_week, title, description, is_checked } = req.body;
+
+    // Build dynamic update query
+    const fields = [];
+    const values = [];
+
+    if (reminder_at !== undefined) fields.push('reminder_at = ?'), values.push(reminder_at);
+    if (time_of_day !== undefined) fields.push('time_of_day = ?'), values.push(time_of_day);
+    if (days_of_week !== undefined) fields.push('days_of_week = ?'), values.push(days_of_week);
+    if (title !== undefined) fields.push('title = ?'), values.push(title);
+    if (description !== undefined) fields.push('description = ?'), values.push(description);
+    if (typeof is_checked === 'boolean') fields.push('is_checked = ?'), values.push(is_checked);
+
+    if (fields.length === 0) {
+        return res.status(400).json({ message: "No fields provided to update." });
+    }
+
+    values.push(reminderId, userId); // for WHERE clause
+
+    const stmt = db.prepare(`UPDATE reminders SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`);
+    const info = stmt.run(...values);
+
+    if (info.changes === 0) {
+        return res.status(404).json({ message: "Reminder not found or you do not have permission to update it." });
+    }
+    res.status(200).json({ message: "Reminder updated successfully." });
+});
+
+/**
+ * DELETE /api/reminders/:id
+ * Deletes a specific reminder (either one-time or recurring) belonging to the user.
+ * Note: The ID used here should be the original database ID.
+ */
+router.delete('/:id', (req, res) => {
+    // Extract the actual database ID
+    const rawId = req.params.id;
+    const parts = rawId.split('_');
+    const reminderId = parts[0];
+
+    const userId = req.auth.payload.sub;
+
+    const stmt = db.prepare('DELETE FROM reminders WHERE id = ? AND user_id = ?');
+    const info = stmt.run(reminderId, userId);
+
+    if (info.changes === 0) {
+        return res.status(404).json({ message: "Reminder not found or you do not have permission to delete it." });
+    }
+    res.status(204).send(); // 204 No Content for successful deletion
+});
+
+module.exports = router;
+
+// src/routes/profile.cjs
+const express = require('express');
+const { db } = require('../db/database.cjs');
+const router = express.Router();
+
+// Middleware to find or create user on every request to this router
+router.use((req, res, next) => {
+    const userId = req.auth.payload.sub;
+    const findUserStmt = db.prepare('SELECT * FROM users WHERE id = ?');
+    let user = findUserStmt.get(userId);
+
+    if (!user) {
+        const userEmail = req.auth.payload[process.env.AUTH0_AUDIENCE + 'email'];
+        if (!userEmail) {
+            return res.status(400).json({ message: "Custom email claim not found in token." });
+        }
+        const insertUserStmt = db.prepare('INSERT INTO users (id, email) VALUES (?, ?)');
+        insertUserStmt.run(userId, userEmail);
+        user = findUserStmt.get(userId);
+    }
+    req.user = user; // Attach user object to the request
+    next();
+});
+
+/**
+ * GET /api/profile
+ * Gets the current user's profile.
+ */
+router.get('/', (req, res) => {
+    res.json(req.user);
+});
+
+/**
+ * PATCH /api/profile
+ * Updates the current user's profile.
+ * Body: { name, bio, profile_picture_url, age, gender, weight_kg }
+ */
+router.patch('/', (req, res) => {
+    const userId = req.user.id;
+    const { name, bio, profile_picture_url, age, gender, weight_kg } = req.body;
+
+    const fields = { name, bio, profile_picture_url, age, gender, weight_kg };
+    const updates = [];
+    const values = [];
+
+    for (const [key, value] of Object.entries(fields)) {
+        if (value !== undefined) {
+            updates.push(`${key} = ?`);
+            values.push(value);
+        }
+    }
+
+    if (updates.length === 0) {
+        return res.status(400).json({ message: "No fields to update provided." });
+    }
+
+    values.push(userId); // for the WHERE clause
+
+    const stmt = db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`);
+    stmt.run(...values);
+
+    const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    res.json(updatedUser);
+});
+
+module.exports = router;
+
+// src/routes/glucose.cjs
+const express = require('express');
+const { db } = require('../db/database.cjs');
+const router = express.Router();
+
+/**
+ * POST /api/glucose-reports
+ * Creates a new glucose report for the current user at the current time.
+ * Body: { glucose_mg_dl: number }
+ */
+router.post('/', (req, res) => {
+    const userId = req.auth.payload.sub;
+    const { glucose_mg_dl } = req.body;
+
+    if (typeof glucose_mg_dl !== 'number') {
+        return res.status(400).json({ message: "glucose_mg_dl must be a number." });
+    }
+
+    const stmt = db.prepare('INSERT INTO glucose_reports (user_id, glucose_mg_dl) VALUES (?, ?)');
+    const info = stmt.run(userId, glucose_mg_dl);
+
+    const newReport = db.prepare('SELECT * FROM glucose_reports WHERE id = ?').get(info.lastInsertRowid);
+    res.status(201).json(newReport);
+});
+
+/**
+ * GET /api/glucose-reports?limit=<days>
+ * Returns the highest glucose reading for each day within the last <limit> days.
+ */
+router.get('/', (req, res) => {
+    const userId = req.auth.payload.sub;
+    const limitDays = parseInt(req.query.limit, 10) || 7; // Default to 7 days
+
+    const stmt = db.prepare(`
+        SELECT
+            date(reported_at) as report_date,
+            MAX(glucose_mg_dl) as max_glucose
+        FROM glucose_reports
+        WHERE
+            user_id = ? AND
+            reported_at >= date('now', '-' || ? || ' days')
+        GROUP BY report_date
+        ORDER BY report_date DESC
+    `);
+
+    const reports = stmt.all(userId, String(limitDays));
+    res.json(reports);
+});
+
+module.exports = router;
+
+// src/routes/annotations.cjs
+const express = require('express');
+const { db } = require('../db/database.cjs');
+const router = express.Router();
+
+/**
+ * GET /api/annotations
+ * Gets all annotations for the current user.
+ */
+router.get('/', (req, res) => {
+    const userId = req.auth.payload.sub;
+    const stmt = db.prepare('SELECT * FROM profile_annotations WHERE user_id = ?');
+    const annotations = stmt.all(userId);
+    res.json(annotations);
+});
+
+/**
+ * POST /api/annotations
+ * Creates a new annotation.
+ * Body: { title: string, content: string }
+ */
+router.post('/', (req, res) => {
+    const userId = req.auth.payload.sub;
+    const { title, content } = req.body;
+
+    if (!title || !content) {
+        return res.status(400).json({ message: "Title and content are required." });
+    }
+
+    const stmt = db.prepare('INSERT INTO profile_annotations (user_id, title, content) VALUES (?, ?, ?)');
+    const info = stmt.run(userId, title, content);
+
+    const newAnnotation = db.prepare('SELECT * FROM profile_annotations WHERE id = ?').get(info.lastInsertRowid);
+    res.status(201).json(newAnnotation);
+});
+
+/**
+ * DELETE /api/annotations/:id
+ * Deletes a specific annotation belonging to the user.
+ */
+router.delete('/:id', (req, res) => {
+    const userId = req.auth.payload.sub;
+    const annotationId = req.params.id;
+
+    // The "AND user_id = ?" is a crucial security check
+    const stmt = db.prepare('DELETE FROM profile_annotations WHERE id = ? AND user_id = ?');
+    const info = stmt.run(annotationId, userId);
+
+    if (info.changes === 0) {
+        return res.status(404).json({ message: "Annotation not found or you do not have permission to delete it." });
+    }
+
+    res.status(204).send(); // 204 No Content for successful deletion
+});
+
+module.exports = router;
+
+// src/routes/food-log.cjs
+const express = require('express');
+const { v4: uuidv4 } = require('uuid');
+const { db } = require('../db/database.cjs');
+const router = express.Router();
+
+/**
+ * GET /api/food-log?date=YYYY-MM-DD
+ * Gets the food log for a specific date, grouped into "meals" by meal_group_id.
+ * Defaults to today's date if 'date' query param is not provided.
+ * Returns: [{ meal_group_id: "...", logged_at: "...", items: [{...}, {...}] }, {...}]
+ */
+router.get('/', (req, res) => {
+    const userId = req.auth.payload.sub;
+    const date = req.query.date || new Date().toISOString().split('T')[0];
+    const stmt = db.prepare(`
+        SELECT
+            l.id AS log_id,
+            l.user_id,
+            l.log_date,
+            l.food_item_id,
+            l.weight_g,
+            l.logged_at,
+            l.meal_group_id,
+            f.name AS food_name,
+            f.energy_kcal_per_100g,
+            f.protein_g_per_100g,
+            f.carbs_g_per_100g
+        FROM daily_food_log l
+        JOIN food_items f ON l.food_item_id = f.id
+        WHERE l.user_id = ? AND l.log_date = ?
+        ORDER BY l.meal_group_id ASC, l.logged_at ASC
+    `);
+
+    try {
+        const logs = stmt.all(userId, date);
+
+        // Group logs into meals based on meal_group_id
+        const mealsMap = new Map();
+
+        logs.forEach(log => {
+            if (!mealsMap.has(log.meal_group_id)) {
+                mealsMap.set(log.meal_group_id, {
+                    meal_group_id: log.meal_group_id,
+                    // Use the logged_at of the first item added to this group as the meal's time
+                    logged_at: log.logged_at,
+                    items: []
+                });
+            }
+            // Add the log item to its corresponding meal group
+            mealsMap.get(log.meal_group_id).items.push(log);
+        });
+
+        // Convert the Map values to an array for the response
+        const meals = Array.from(mealsMap.values());
+
+        // Optional: Sort meals by their first item's logged_at time if needed
+        // meals.sort((a, b) => new Date(a.logged_at) - new Date(b.logged_at));
+
+        res.json(meals);
+    } catch (err) {
+        console.error("Error fetching food log:", err);
+        res.status(500).json({ message: "Internal server error while fetching food log." });
+    }
+});
+
+/**
+ * GET /api/food-log/totals?date=YYYY-MM-DD
+ * Calculates and returns the total calories, protein, and carbs consumed on a specific date.
+ * Defaults to today's date if 'date' query param is not provided.
+ */
+router.get('/totals', (req, res) => {
+    const userId = req.auth.payload.sub;
+    // Default to today's date if not provided
+    const date = req.query.date || new Date().toISOString().split('T')[0];
+
+    // Query to aggregate nutritional values based on weight consumed
+    const stmt = db.prepare(`
+        SELECT
+            SUM((l.weight_g / 100.0) * f.energy_kcal_per_100g) AS total_energy_kcal,
+            SUM((l.weight_g / 100.0) * f.protein_g_per_100g) AS total_protein_g,
+            SUM((l.weight_g / 100.0) * f.carbs_g_per_100g) AS total_carbs_g
+        FROM daily_food_log l
+        JOIN food_items f ON l.food_item_id = f.id
+        WHERE l.user_id = ? AND l.log_date = ?
+    `);
+
+    try {
+        const totals = stmt.get(userId, date);
+
+        // Handle case where no logs exist for the date
+        if (!totals) {
+             return res.json({
+                total_energy_kcal: 0,
+                total_protein_g: 0,
+                total_carbs_g: 0
+            });
+        }
+
+        // Ensure numeric types and round if desired (optional)
+        const result = {
+            total_energy_kcal: parseFloat(totals.total_energy_kcal?.toFixed(2)) || 0,
+            total_protein_g: parseFloat(totals.total_protein_g?.toFixed(2)) || 0,
+            total_carbs_g: parseFloat(totals.total_carbs_g?.toFixed(2)) || 0
+        };
+
+        res.json(result);
+    } catch (err) {
+        console.error("Error calculating food log totals:", err);
+        res.status(500).json({ message: "Internal server error while calculating food log totals." });
+    }
+});
+
+
+/**
+ * POST /api/food-log
+ * Adds an entry to the food log.
+ * Body: { food_item_id: integer, log_date: string (YYYY-MM-DD), weight_g: number, meal_group_id: string (optional) }
+ * If meal_group_id is not provided, a new one is generated, signifying a new meal.
+ */
+router.post('/', (req, res) => {
+    const userId = req.auth.payload.sub;
+    let { food_item_id, log_date, weight_g, meal_group_id } = req.body;
+
+    // Basic validation
+    if (!food_item_id || !log_date || typeof weight_g !== 'number' || weight_g <= 0) {
+        return res.status(400).json({ message: "food_item_id, log_date, and a positive weight_g are required." });
+    }
+
+    // If no meal_group_id is provided, generate a new one for a new meal
+    if (!meal_group_id) {
+        meal_group_id = uuidv4();
+    }
+
+    // logged_at defaults to CURRENT_TIMESTAMP
+    const stmt = db.prepare(`
+        INSERT INTO daily_food_log
+        (user_id, food_item_id, log_date, weight_g, meal_group_id)
+        VALUES (?, ?, ?, ?, ?)
+    `);
+
+    try {
+        const info = stmt.run(userId, food_item_id, log_date, weight_g, meal_group_id);
+        const newLogId = info.lastInsertRowid;
+        // Fetch the newly created log entry to return it
+        const newLogStmt = db.prepare('SELECT * FROM daily_food_log WHERE id = ?');
+        const newLog = newLogStmt.get(newLogId);
+        res.status(201).json(newLog);
+    } catch (err) {
+        console.error("Error creating food log entry:", err);
+        // Check for specific errors like foreign key constraint?
+        res.status(500).json({ message: "Internal server error while creating food log entry." });
+    }
+});
+
+/**
+ * DELETE /api/food-log/:id
+ * Deletes a specific food log entry belonging to the user.
+ * This effectively removes one item from its associated "meal".
+ */
+router.delete('/:id', (req, res) => {
+    const userId = req.auth.payload.sub;
+    const logId = req.params.id;
+
+    // Ensure the log entry belongs to the user
+    const stmt = db.prepare('DELETE FROM daily_food_log WHERE id = ? AND user_id = ?');
+
+    try {
+        const info = stmt.run(logId, userId);
+        if (info.changes === 0) {
+            return res.status(404).json({ message: "Food log entry not found or you do not have permission to delete it." });
+        }
+        res.status(204).send(); // 204 No Content for successful deletion
+    } catch(err) {
+         console.error("Error deleting food log entry:", err);
+         res.status(500).json({ message: "Internal server error while deleting food log entry." });
+    }
+});
+
+module.exports = router;
+
+// src/routes/utils.cjs
+const express = require('express');
+const { db } = require('../db/database.cjs');
+const fs = require('fs');
+const path = require('path');
+const csv = require('csv-parser'); 
+const router = express.Router();
+
+/**
+ * GET /utils/load
+ * Utility endpoint to load food items from a CSV file into the database.
+ * Expected CSV columns (based on your sample): Descrição dos alimentos, Energia (kcal), Proteína (g), Carboidrato (g)
+ * This is a utility endpoint, access should be restricted.
+ * For now, we'll restrict it to users with a valid JWT (meaning any logged-in user, adjust authZ as needed).
+ * Consider adding an environment variable flag (e.g., ENABLE_CSV_LOAD) for extra safety in production.
+ */
+router.get('/load', async (req, res) => {
+    const csvFilePath = path.join(__dirname, '../../assets/alimentos.csv');
+
+    if (!fs.existsSync(csvFilePath)) {
+        console.error(`CSV file not found at path: ${csvFilePath}`);
+        return res.status(500).json({ message: "CSV file not found on the server." });
+    }
+
+    const results = [];
+    let processedCount = 0;
+    let errorCount = 0;
+
+    console.log(`Starting to load food items from ${csvFilePath}`);
+
+    try {
+        // Prepare the SQL statement for upsert (insert or update)
+        // This uses SQLite's ON CONFLICT clause assuming 'name' has a UNIQUE constraint
+        const upsertStmt = db.prepare(`
+            INSERT INTO food_items (name, energy_kcal_per_100g, protein_g_per_100g, carbs_g_per_100g)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(name) DO UPDATE SET
+                energy_kcal_per_100g = excluded.energy_kcal_per_100g,
+                protein_g_per_100g = excluded.protein_g_per_100g,
+                carbs_g_per_100g = excluded.carbs_g_per_100g
+        `);
+
+        // Wrap the database operations in a transaction for better performance and atomicity
+        db.exec('BEGIN TRANSACTION');
+
+        fs.createReadStream(csvFilePath)
+            .pipe(csv({
+                separator: ';', // Specify the separator used in your CSV
+                // Map CSV headers to more usable property names and handle commas in numbers
+                mapHeaders: ({ header, index }) => {
+                     switch(header.trim()) {
+                        case 'Descrição dos alimentos': return 'name';
+                        case 'Energia (kcal)': return 'energy_kcal_per_100g';
+                        case 'Proteína (g)': return 'protein_g_per_100g';
+                        case 'Carboidrato (g)': return 'carbs_g_per_100g';
+                        default: return header; // Ignore other columns
+                     }
+                },
+                // Convert string values to appropriate types and handle commas/NA
+                mapValues: ({ header, index, value }) => {
+                    value = value?.trim();
+                    if (!value || value.toUpperCase() === 'NA' || value === '') {
+                        // Handle 'NA' or empty values. For numerical fields, we might want to use null or 0.
+                        // Assuming we want to store numbers, use 0 or null. Let's use null for now.
+                        if (['energy_kcal_per_100g', 'protein_g_per_100g', 'carbs_g_per_100g'].includes(header)) {
+                            return null; // Or 0 if you prefer
+                        }
+                        return value; // Return as is for other fields (though name shouldn't be NA)
+                    }
+                    // Handle decimal commas (e.g., "70,1" -> 70.1)
+                    if (['energy_kcal_per_100g', 'protein_g_per_100g', 'carbs_g_per_100g'].includes(header)) {
+                         const normalizedValue = value.replace(',', '.');
+                         const num = parseFloat(normalizedValue);
+                         return isNaN(num) ? null : num; // Convert to float or null if invalid
+                    }
+                    return value; // Return other string values as is
+                }
+            }))
+            .on('data', (data) => {
+                results.push(data);
+                // console.log('Parsed row:', data); // Optional: Log parsed rows
+            })
+            .on('end', () => {
+                console.log(`Finished parsing CSV. Total rows parsed: ${results.length}`);
+
+                for (const item of results) {
+                    if (!item.name) {
+                        console.warn(`Skipping row due to missing name:`, item);
+                        errorCount++;
+                        continue;
+                    }
+
+                    try {
+                        upsertStmt.run(
+                            item.name,
+                            item.energy_kcal_per_100g,
+                            item.protein_g_per_100g,
+                            item.carbs_g_per_100g
+                        );
+                        processedCount++;
+                    } catch (dbErr) {
+                        console.error(`Database error upserting item '${item.name}':`, dbErr);
+                        errorCount++;
+                    }
+                }
+
+                db.exec('COMMIT'); // Commit the transaction if everything went well so far
+
+                console.log(`CSV loading completed. Processed: ${processedCount}, Errors: ${errorCount}`);
+                res.json({
+                    message: "CSV loading process finished.",
+                    processed: processedCount,
+                    errors: errorCount
+                });
+            })
+            .on('error', (csvErr) => {
+                console.error("Error reading or parsing CSV file:", csvErr);
+                db.exec('ROLLBACK'); // Rollback transaction on CSV read/parse error
+                res.status(500).json({ message: "Error reading or parsing CSV file.", error: csvErr.message });
+            });
+
+    } catch (err) {
+        console.error("Unexpected error during CSV loading:", err);
+        try {
+             db.exec('ROLLBACK');
+        } catch (rollbackErr) {
+            console.error("Error rolling back transaction:", rollbackErr);
+        }
+        res.status(500).json({ message: "Internal server error during CSV loading.", error: err.message });
+    }
+});
+
+module.exports = router;
+
+// src/routes/food-items.cjs
+const express = require('express');
+const { db } = require('../db/database.cjs');
+const router = express.Router();
+
+/**
+ * GET /api/food-items/search?q=<query>
+ * Searches for food items by name.
+ * If 'q' is provided, finds the 10 most similar items (using LIKE with %query%).
+ * If 'q' is not provided, returns the first 10 items ordered by ID.
+ * Query parameter 'q' should be URL-encoded.
+ */
+router.get('/search', (req, res) => {
+  const searchTerm = req.query.q;
+
+  let stmt;
+  let params = [];
+
+  if (searchTerm && typeof searchTerm === 'string') {
+    // Sanitize input slightly and prepare for LIKE search
+    // Using %term% for "contains" search. Adjust collation if needed for case sensitivity.
+    const sanitizedTerm = searchTerm.trim();
+    if (sanitizedTerm.length > 0) {
+      stmt = db.prepare(`
+        SELECT id, name, energy_kcal_per_100g, protein_g_per_100g, carbs_g_per_100g
+        FROM food_items
+        WHERE name LIKE ?
+        ORDER BY name
+        LIMIT 10
+      `);
+      params = [`%${sanitizedTerm}%`];
+    } else {
+      // If trimmed term is empty, treat as no term provided
+      stmt = db.prepare(`
+        SELECT id, name, energy_kcal_per_100g, protein_g_per_100g, carbs_g_per_100g
+        FROM food_items
+        ORDER BY id
+        LIMIT 10
+      `);
+    }
+  } else {
+    // No search term provided, return first 10 by ID
+     stmt = db.prepare(`
+        SELECT id, name, energy_kcal_per_100g, protein_g_per_100g, carbs_g_per_100g
+        FROM food_items
+        ORDER BY id
+        LIMIT 10
+      `);
+  }
+
+  try {
+    const items = stmt.all(...params);
+    res.json(items);
+  } catch (err) {
+    console.error("Error searching food items:", err);
+    res.status(500).json({ message: "Internal server error while searching food items." });
+  }
+});
+
+module.exports = router;
+

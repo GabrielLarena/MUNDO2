@@ -1,70 +1,91 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Dietamigo</title>
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
-
+  <!-- Auth0 SPA SDK -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+  <!-- Your Application Script (ensure it's loaded AFTER Auth0 SDK) -->
+  <script type="module" src="/src/lib/authManager.js"></script>
+  <style>
+    /* Basic styles to ensure the page is blank during processing */
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #f5f5f5; /* Optional subtle background */
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .processing {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #666;
+    }
+  </style>
 </head>
 <body>
-  <header class="header">
-    <div class="logo">
-      <a href="index.html">
-        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
-      </a>
-    </div>
-    <button class="burger" id="burger" aria-label="Menu">
-      <i class="fas fa-bars"></i>
-    </button>
-    <nav class="menu" id="menu">
-      <ul>
-        <li><a href="index.html">🏠 Página Inicial</a></li>
-        <li><a href="login.html">🔐 Log In</a></li>
-        <li><a href="calculo.html">🥗 Dieta</a></li>
-        <li><a href="refeicao.html">🍽️ Pratos</a></li>
-        <li><a href="carreira.html">👔 Carreiras</a></li>
-        <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
-      </ul>
-       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
-    </nav>
-  </header>
+  <!-- Minimal content shown only during processing -->
+  <div id="processing-message" class="processing" style="display: none;">
+    <p>Processing login...</p>
+  </div>
 
-  <main class="main-container">
-    <section class="section">
-      <div class="text-content">
-        <h1>Login</h1>
-        <form>
-          <input type="email" placeholder="Email" style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;" />
-          <input type="password" placeholder="Senha" style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;" />
-          <button class="cta">Entrar</button>
-        </form>
-      </div>
-    </section>
-  </main>
+  <script type="module">
+    // Import functions from your authManager
+    import { initAuth, handleRedirectCallback, login, logout } from '/src/lib/authManager.js';
 
-  <footer class="footer">
-    <div class="footer-top">
-      <div class="footer-left">
-        <a href="index.html">
-          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
-        </a>
-        <div class="footer-socials">
-          <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
-          <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
-          <a href="#" aria-label="YouTube"><i class="fab fa-youtube social-icon"></i></a>
-        </div>
-      </div>
-      <div class="footer-links">
-        <a href="sobre.html">Sobre nós</a>
-        <a href="carreira.html">Carreiras</a>
-        <a href="#">Política de privacidade</a>
-      </div>
-    </div>
-    <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
-  </footer>
-  
-  <script src="script.js"></script>
+    /**
+     * Main function to initialize authentication and handle login flow.
+     */
+    async function initializeAuth() {
+      try {
+        // 1. Initialize the Auth0 client (from authManager.js)
+        const client = await initAuth();
+        console.log("Auth0 client initialized in login.html.");
+
+        // 2. Check if the page was called back from Auth0 (URL contains code/state)
+        const query = window.location.search;
+        if (query.includes("code=") && query.includes("state=")) {
+          console.log("Handling Auth0 redirect callback...");
+          // Show processing message
+          document.getElementById('processing-message').style.display = 'flex';
+
+          // 3. Process the redirect callback (from authManager.js)
+          // This will validate the state, fetch the user profile, get the token, and store it.
+          await handleRedirectCallback();
+
+          // 4. Remove query parameters from the URL for a clean address bar
+          window.history.replaceState({}, document.title, window.location.pathname);
+
+          // 5. Redirect to the main application page after successful login
+          console.log("Redirecting to main page...");
+          window.location.replace("/");
+        } else {
+          // 6. If not a callback, redirect to Auth0 login immediately
+          console.log("Initiating login redirect to Auth0...");
+          // Show processing message
+          document.getElementById('processing-message').style.display = 'flex';
+          // This will redirect the browser to Auth0's Universal Login Page
+          await login();
+        }
+      } catch (error) {
+        console.error("Failed during Auth0 initialization or login flow:", error);
+        // Optionally display an error message to the user
+        document.body.innerHTML = `
+          <div class="processing">
+            <p>Error: ${error.message || 'Unknown error'}. <a href="/">Try Again</a></p>
+          </div>
+        `;
+      }
+    }
+
+    // - Initialize on DOM Load -
+    document.addEventListener("DOMContentLoaded", () => {
+      initializeAuth(); // Call the main async function
+    });
+  </script>
 </body>
 </html>

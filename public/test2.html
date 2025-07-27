@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Food Log API Test with Auth (Meal Grouping)</title>
+  <style>
+    /* - Basic Styling for Output and Auth UI - */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      line-height: 1.6;
+      color: #333;
+      max-width: 960px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+    #auth-actions, #gated-content {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+    }
+    #auth-actions {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+    }
+    #gated-content {
+      background-color: #e8f5e9;
+      border: 1px solid #c8e6c9;
+    }
+    .cta-button {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
+    .cta-button:hover {
+      background-color: #0056b3;
+    }
+    #btn-logout {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #btn-logout:hover {
+      background-color: #c82333;
+    }
+    #btn-run-tests {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+    }
+    #btn-run-tests:hover {
+      background-color: #218838;
+    }
+    pre {
+      background-color: #f4f4f4;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    #output {
+      margin-top: 1rem;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Food Log API Test (Meal Grouping) with Auth</h1>
+
+  <!-- - Auth UI - -->
+  <div id="auth-actions">
+    <p>You are not logged in.</p>
+    <!-- Redirect button/link to login.html -->
+    <a href="login.html" class="cta-button">Go to Login</a>
+  </div>
+
+  <div id="gated-content" class="hidden">
+    <p>You are logged in. <button id="btn-logout">Logout</button></p>
+    <hr>
+    <p><strong>Instructions:</strong></p>
+    <ol>
+      <li>Ensure your backend server is running.</li>
+      <li>Open the browser's developer console to see detailed logs.</li>
+      <li>Check the output below for API test results.</li>
+    </ol>
+    <button id="btn-run-tests">Run API Tests</button>
+    <p><strong>Output:</strong></p>
+    <div id="output"></div>
+  </div>
+
+  <!-- Auth0 SPA SDK -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+  <!-- Your Application Script -->
+  <script type="module">
+    // Import the centralized auth manager and API client
+    import { getAccessToken, logout } from './src/lib/authManager.js';
+    import apiClient from './src/lib/apiClient.js';
+
+    // --- Helper Functions ---
+    function updateUI(isAuthenticated) {
+      document.getElementById('auth-actions').style.display = isAuthenticated ? 'none' : 'block';
+      const gatedContent = document.getElementById('gated-content');
+      gatedContent.classList.toggle('hidden', !isAuthenticated);
+      gatedContent.style.display = isAuthenticated ? 'block' : 'none';
+    }
+
+    function appendOutput(text, isError = false, isSuccess = false) {
+      const outputDiv = document.getElementById('output');
+      const pre = document.createElement('pre');
+      if (isError) pre.classList.add('error');
+      if (isSuccess) pre.classList.add('success');
+      const displayText = (typeof text === 'object') ? JSON.stringify(text, null, 2) : String(text);
+      pre.textContent = displayText;
+      outputDiv.appendChild(pre);
+      console.log(text);
+    }
+
+    // --- Main Logic ---
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        // 1. Attempt to get the access token using the auth manager.
+        // This handles initialization, checking auth status, getting the token,
+        // setting it on apiClient, and redirecting to login if needed.
+        const token = await getAccessToken();
+
+        if (token) {
+          // 2a. If we got a token, the user is authenticated and the token is set on apiClient
+          console.log("Ready to make authenticated API calls.");
+          apiClient.setAuthToken(token);
+          updateUI(true); // Show gated content
+
+          // --- Event Listeners ---
+          const logoutButton = document.getElementById("btn-logout");
+          const runTestsButton = document.getElementById("btn-run-tests");
+
+          if (logoutButton) {
+            logoutButton.addEventListener("click", () => {
+              // Logout and redirect back to the main page or wherever appropriate
+              logout(window.location.origin); // Or specify a different return URL like /login.html
+            });
+          } else {
+            console.warn("Logout button not found in the DOM.");
+          }
+
+          if (runTestsButton) {
+            runTestsButton.addEventListener("click", runApiTests);
+          } else {
+            console.warn("Run Tests button not found in the DOM.");
+          }
+
+        } else {
+          // 2b. If getAccessToken returned null, it likely means a redirect is happening.
+          console.log("Redirecting to login or handling error...");
+          updateUI(false);
+        }
+
+      } catch (error) {
+        console.error("Unexpected error during authentication setup:", error);
+        const outputDiv = document.getElementById('output');
+        if (outputDiv) {
+          outputDiv.innerHTML = `<pre class="error">Authentication Error: ${error.message || 'Unknown error'}. Redirecting...</pre>`;
+        }
+        updateUI(false);
+        // Redirect as a safe fallback even on unexpected errors
+        setTimeout(() => {
+          window.location.replace("/login.html");
+        }, 2000);
+      }
+    });
+
+    // --- Main API Test Logic (Assumes token is already set by getAccessToken) ---
+    async function runApiTests() {
+      appendOutput("Starting API Tests...");
+      try {
+        // The token should already be set by getAccessToken if the user is authenticated
+
+        // - 1. Fetch User Profile -
+        appendOutput("1. Fetching User Profile...");
+        const profile = await apiClient.getProfile();
+        appendOutput(profile);
+
+        // - 2. Fetch Food Items -
+        appendOutput("2. Fetching Food Items...");
+        const foodItems = await apiClient.searchFoodItems();
+        appendOutput(foodItems);
+
+        // - 3. Fetch Today's Meals -
+        appendOutput("3. Fetching Today's Meals...");
+        const meals = await apiClient.getFoodLog(); // Gets today's log
+        appendOutput("Fetched meals:");
+        appendOutput(meals);
+
+        // - 4. Add an item to a NEW meal -
+        appendOutput("4. Adding item to a NEW meal...");
+        // IMPORTANT: Replace '1' with a valid food_item_id from your database
+        const newItemData = {
+          food_item_id: 1, // <-- REPLACE WITH A VALID ID FROM YOUR DB
+          log_date: new Date().toISOString().split('T')[0], // Today's date
+          weight_g: 100
+          // meal_group_id is omitted to create a new meal
+        };
+        const newMealItem = await apiClient.addFoodLogEntry(newItemData);
+        const newMealGroupId = newMealItem.meal_group_id;
+        appendOutput(`Added item to new meal (Group ID: ${newMealGroupId}):`);
+        appendOutput(newMealItem);
+
+        // - 5. Add another item to the SAME meal (using the meal_group_id from step 4) -
+        appendOutput("5. Adding another item to the SAME meal...");
+        // IMPORTANT: Replace '2' with a DIFFERENT valid food_item_id from your database
+        const anotherItemData = {
+          food_item_id: 2, // <-- REPLACE WITH A DIFFERENT VALID ID FROM YOUR DB
+          log_date: new Date().toISOString().split('T')[0], // Today's date
+          weight_g: 150,
+          meal_group_id: newMealGroupId // Link to the existing meal group
+        };
+        const anotherMealItem = await apiClient.addFoodLogEntry(anotherItemData);
+        appendOutput(`Added item to existing meal (Group ID: ${newMealGroupId}):`);
+        appendOutput(anotherMealItem);
+
+        // - 6. Re-fetch meals to see the additions -
+        appendOutput("6. Re-fetching Meals After Additions...");
+        const mealsAfterAdd = await apiClient.getFoodLog(); // Gets today's log
+        appendOutput("Meals after additions:");
+        appendOutput(mealsAfterAdd);
+
+        // - 7. Get nutritional totals -
+        appendOutput("7. Fetching Today's Nutritional Totals...");
+        const totals = await apiClient.getFoodLogTotals(); // Gets today's totals
+        appendOutput("Today's nutritional totals:");
+        appendOutput(totals);
+
+        // - 8. Delete the second item added -
+        appendOutput(`8. Deleting item with ID ${anotherMealItem.id}...`);
+        await apiClient.deleteFoodLogEntry(anotherMealItem.id);
+        appendOutput(`Deleted item with ID ${anotherMealItem.id}.`);
+
+        // - 9. Re-fetch meals to see final state -
+        appendOutput("9. Re-fetching Meals After Deletion...");
+        const mealsAfterDelete = await apiClient.getFoodLog();
+        appendOutput("Final meals state:");
+        appendOutput(mealsAfterDelete);
+
+        appendOutput("All API Tests Completed Successfully!", false, true); // isSuccess
+
+      } catch (error) {
+        console.error("An error occurred during the test:", error);
+        appendOutput(`- ERROR - ${error.message || error}`, true); // isError
+      }
+    }
+
+  </script>
+</body>
+</html>

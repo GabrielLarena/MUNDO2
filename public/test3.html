@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reminders Test</title>
+  <style>
+    /* - Basic Styling for Output and Auth UI - */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      line-height: 1.6;
+      color: #333;
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+    #auth-actions,
+    #gated-content {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+    }
+    #auth-actions {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+    }
+    #gated-content {
+      background-color: #e8f5e9;
+      border: 1px solid #c8e6c9;
+    }
+    .cta-button {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
+    .cta-button:hover {
+      background-color: #0056b3;
+    }
+    #btn-logout {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #btn-logout:hover {
+      background-color: #c82333;
+    }
+    #btn-run-tests {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+    }
+    #btn-run-tests:hover {
+      background-color: #218838;
+    }
+    pre {
+      background-color: #f4f4f4;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    #output {
+      margin-top: 1rem;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+    .hidden {
+      display: none;
+    }
+
+    /* Reminder Form Styling */
+    form {
+      margin-bottom: 2rem;
+      padding: 1rem;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+    }
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+    }
+
+
+    /* --- Calendar Styling --- */
+    #calendar-container {
+      margin-top: 2rem;
+    }
+    #calendar-header {
+       text-align: center;
+       margin-bottom: 1rem;
+       font-size: 1.5rem;
+       font-weight: bold;
+    }
+    #calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr); /* 7 columns for days of the week */
+      gap: 5px; /* Space between cells */
+      /* max-width: 800px; */ /* Optional: constrain width */
+      margin: 0 auto;
+    }
+
+    .calendar-day-header {
+      background-color: #e9ecef;
+      padding: 10px 5px;
+      text-align: center;
+      font-weight: bold;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+    }
+
+    .calendar-day {
+      background-color: #ffffff;
+      min-height: 100px; /* Minimum height for day cells */
+      padding: 5px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      position: relative;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .calendar-day:hover {
+       background-color: #f0f8ff; /* Light blue on hover */
+    }
+
+    .calendar-day-number {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .calendar-day.has-reminders {
+      background-color: #fff3cd; /* Yellowish background for days with reminders */
+      border-color: #ffeeba;
+    }
+
+     .calendar-day.has-reminders:hover {
+       background-color: #ffecb3; /* Slightly darker yellow on hover if it has reminders */
+     }
+
+    .calendar-day .reminder-dot {
+       display: inline-block;
+       width: 8px;
+       height: 8px;
+       background-color: #007bff; /* Blue dot */
+       border-radius: 50%;
+       margin: 2px;
+    }
+
+    /* --- Modal Styling --- */
+    #reminder-modal {
+      display: none; /* Hidden by default */
+      position: fixed;
+      z-index: 1000; /* Sit on top */
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto; /* Enable scroll if needed */
+      background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+    }
+
+    #modal-content {
+      background-color: #fefefe;
+      margin: 10% auto; /* 10% from the top and centered */
+      padding: 20px;
+      border: 1px solid #888;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 600px;
+    }
+
+    #modal-close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #modal-close:hover,
+    #modal-close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    #modal-title {
+       margin-top: 0;
+    }
+
+    #modal-reminders-list {
+      list-style: none;
+      padding: 0;
+      margin-top: 1rem;
+    }
+
+    #modal-reminders-list li {
+      padding: 0.75rem;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      margin-bottom: 0.75rem;
+      background-color: #ffffff;
+    }
+
+    .reminder-title {
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+    .reminder-description {
+      margin-bottom: 0.25rem;
+      font-size: 0.9em;
+    }
+    .reminder-meta {
+      font-size: 0.85em;
+      color: #6c757d;
+      margin-bottom: 0.5rem;
+    }
+    .delete-btn,
+    .check-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      margin-right: 0.5rem;
+    }
+    .delete-btn:hover {
+      background-color: #c82333;
+    }
+    .check-btn {
+      background-color: #28a745;
+    }
+    .check-btn:hover {
+      background-color: #218838;
+    }
+
+    /* --- End Calendar & Modal Styling --- */
+
+  </style>
+</head>
+<body>
+  <h1>Reminders Test Panel</h1>
+  <!-- - Auth UI - -->
+  <div id="auth-actions">
+    <p>You are not logged in.</p>
+    <!-- Redirect button/link to login.html -->
+    <a href="login.html" class="cta-button">Go to Login</a>
+  </div>
+  <div id="gated-content" class="hidden">
+    <p>You are logged in. <button id="btn-logout">Logout</button></p>
+    <hr>
+    <button id="btn-run-tests">Refresh Reminders & Calendar</button>
+    <h2>Add New Reminder</h2>
+    <form id="reminder-form">
+      <label>Type:
+        <select name="type" required>
+          <option value="">Select Type</option>
+          <option value="one-time">One-Time</option>
+          <option value="recurring">Recurring</option>
+        </select>
+      </label>
+      <div id="one-time-fields" class="hidden">
+        <label>Reminder At (ISO 8601):
+          <input type="datetime-local" name="reminder_at">
+        </label>
+      </div>
+      <div id="recurring-fields" class="hidden">
+        <label>Time of Day (HH:MM):
+          <input type="time" name="time_of_day">
+        </label>
+        <label>Days of Week (select multiple):
+          <select name="days_of_week" multiple>
+            <option value="MON">Monday</option>
+            <option value="TUE">Tuesday</option>
+            <option value="WED">Wednesday</option>
+            <option value="THU">Thursday</option>
+            <option value="FRI">Friday</option>
+            <option value="SAT">Saturday</option>
+            <option value="SUN">Sunday</option>
+          </select>
+        </label>
+      </div>
+      <label>Title:
+        <input type="text" name="title" required>
+      </label>
+      <label>Description:
+        <textarea name="description"></textarea>
+      </label>
+      <button type="submit">Add Reminder</button>
+    </form>
+
+    <!-- Calendar Container -->
+    <div id="calendar-container">
+        <div id="calendar-header"></div>
+        <div id="calendar">
+            <!-- Calendar will be rendered here by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Modal for displaying reminders on a specific day -->
+    <div id="reminder-modal">
+        <div id="modal-content">
+            <span id="modal-close">&times;</span>
+            <h2 id="modal-title">Reminders for ...</h2>
+            <ul id="modal-reminders-list">
+                <!-- Reminders for the selected day will be populated here -->
+            </ul>
+        </div>
+    </div>
+
+
+  </div>
+  <!-- Auth0 SPA SDK -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+  <!-- Your Application Script -->
+  <script type="module">
+    // Import the centralized auth manager and API client
+    import { getAccessToken, logout } from './src/lib/authManager.js';
+    import apiClient from './src/lib/apiClient.js';
+
+    // --- Global Variable to store fetched reminders ---
+    window.fetchedReminders = [];
+
+    // - Helper Functions -
+    function updateUI(isAuthenticated) {
+      document.getElementById('auth-actions').style.display = isAuthenticated ? 'none' : 'block';
+      const gatedContent = document.getElementById('gated-content');
+      gatedContent.classList.toggle('hidden', !isAuthenticated); // Use classList.toggle for cleaner handling
+    }
+    function appendOutput(text, isError = false, isSuccess = false) {
+      const outputDiv = document.getElementById('output'); // Assuming you have an output div
+      if (outputDiv) {
+        const pre = document.createElement('pre');
+        if (isError) pre.classList.add('error');
+        if (isSuccess) pre.classList.add('success');
+        const displayText = (typeof text === 'object') ? JSON.stringify(text, null, 2) : String(text);
+        pre.textContent = displayText;
+        outputDiv.appendChild(pre);
+        console.log(text);
+        // Auto-scroll to the bottom
+        outputDiv.scrollTop = outputDiv.scrollHeight;
+      }
+    }
+
+    // - UI Interaction Helpers -
+    function toggleReminderFields() {
+      const typeSelect = document.querySelector('select[name="type"]');
+      const oneTimeFields = document.getElementById('one-time-fields');
+      const recurringFields = document.getElementById('recurring-fields');
+      if (typeSelect && oneTimeFields && recurringFields) {
+        const selectedType = typeSelect.value;
+        oneTimeFields.classList.toggle('hidden', selectedType !== 'one-time');
+        recurringFields.classList.toggle('hidden', selectedType !== 'recurring');
+        // Set required attributes dynamically
+        const reminderAtInput = document.querySelector('input[name="reminder_at"]');
+        const timeOfDayInput = document.querySelector('input[name="time_of_day"]');
+        const daysOfWeekSelect = document.querySelector('select[name="days_of_week"]');
+        if (reminderAtInput) reminderAtInput.required = (selectedType === 'one-time');
+        if (timeOfDayInput) timeOfDayInput.required = (selectedType === 'recurring');
+        if (daysOfWeekSelect) daysOfWeekSelect.required = (selectedType === 'recurring');
+      }
+    }
+
+    // --- New Calendar Functions ---
+
+    // Function to get the number of days in a month
+    function getDaysInMonth(year, month) {
+        return new Date(year, month + 1, 0).getDate();
+    }
+
+    // Function to get the first day of the month (0=Sunday, 1=Monday, etc.)
+    function getFirstDayOfMonth(year, month) {
+         // getDay() returns 0 for Sunday, but we want 0 for Monday...
+         // Adjusting: 0 (Sun) -> 6, 1 (Mon) -> 0, ..., 6 (Sat) -> 5
+         const dayIndex = new Date(year, month, 1).getDay();
+         return dayIndex === 0 ? 6 : dayIndex - 1;
+    }
+
+    // Function to render the calendar
+    function renderCalendar(reminders) {
+        const calendarEl = document.getElementById('calendar');
+        const headerEl = document.getElementById('calendar-header');
+        if (!calendarEl || !headerEl) {
+            console.error("Calendar elements not found in DOM");
+            return;
+        }
+        calendarEl.innerHTML = ''; // Clear previous calendar
+
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth(); // 0-11
+
+        const monthNames = ["January", "February", "March", "April", "May", "June",
+                            "July", "August", "September", "October", "November", "December"];
+        headerEl.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+        const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+        const firstDayOfMonth = getFirstDayOfMonth(currentYear, currentMonth); // 0=Monday offset
+
+        const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        dayHeaders.forEach(day => {
+            const headerCell = document.createElement('div');
+            headerCell.classList.add('calendar-day-header');
+            headerCell.textContent = day;
+            calendarEl.appendChild(headerCell);
+        });
+
+        // --- Corrected Logic Starts Here ---
+        // Create a map of date strings (YYYY-MM-DD) to reminders for quick lookup
+        // This now considers ANY reminder with a 'reminder_at' field.
+        const remindersByDate = {};
+        if (reminders && Array.isArray(reminders)) {
+            reminders.forEach(reminder => {
+                // Check if the reminder object has the reminder_at property
+                if (reminder.reminder_at) {
+                    try {
+                        // Use the reminder_at field provided by the backend
+                        // which is already calculated for both one-time and recurring instances
+                        const dateKey = new Date(reminder.reminder_at).toISOString().split('T')[0];
+                        if (!remindersByDate[dateKey]) {
+                            remindersByDate[dateKey] = [];
+                        }
+                        remindersByDate[dateKey].push(reminder);
+                    } catch (e) {
+                        console.error("Error processing reminder date:", reminder, e);
+                    }
+                } else {
+                     console.warn("Reminder missing 'reminder_at' field:", reminder);
+                }
+            });
+        }
+        // --- Corrected Logic Ends Here ---
+
+        // Add empty cells for days before the 1st
+        for (let i = 0; i < firstDayOfMonth; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.classList.add('calendar-day', 'empty');
+            calendarEl.appendChild(emptyCell);
+        }
+
+        // Add cells for each day of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayCell = document.createElement('div');
+            dayCell.classList.add('calendar-day');
+            const dayNumber = document.createElement('div');
+            dayNumber.classList.add('calendar-day-number');
+            dayNumber.textContent = day;
+            dayCell.appendChild(dayNumber);
+
+            // Format the date key for this day (YYYY-MM-DD)
+            const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const remindersForDay = remindersByDate[dateKey] || [];
+
+            // Highlight days with reminders
+            if (remindersForDay.length > 0) {
+                dayCell.classList.add('has-reminders');
+                // Optionally, add visual indicators like dots
+                const dotContainer = document.createElement('div');
+                remindersForDay.slice(0, 3).forEach(() => { // Show max 3 dots
+                    const dot = document.createElement('span');
+                    dot.classList.add('reminder-dot');
+                    dotContainer.appendChild(dot);
+                });
+                if (remindersForDay.length > 3) {
+                     const moreDots = document.createElement('span');
+                     moreDots.textContent = '...';
+                     moreDots.style.fontSize = '0.7em';
+                     dotContainer.appendChild(moreDots);
+                }
+                dayCell.appendChild(dotContainer);
+            }
+
+            // Add click event to show reminders for the day
+            dayCell.addEventListener('click', () => {
+                showRemindersForDay(remindersForDay, dateKey);
+            });
+
+            calendarEl.appendChild(dayCell);
+        }
+    }
+
+    // Function to show reminders in the modal for a specific day
+    function showRemindersForDay(reminders, dateKey) {
+        const modal = document.getElementById('reminder-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalList = document.getElementById('modal-reminders-list');
+        const modalClose = document.getElementById('modal-close');
+
+        if (!modal || !modalTitle || !modalList || !modalClose) {
+            console.error("Modal elements not found");
+            return;
+        }
+
+        modalTitle.textContent = `Reminders for ${dateKey}`;
+        modalList.innerHTML = ''; // Clear previous list
+
+        if (reminders && reminders.length > 0) {
+            reminders.forEach(reminder => {
+                const li = document.createElement('li');
+
+                const titleDiv = document.createElement('div');
+                titleDiv.classList.add('reminder-title');
+                titleDiv.textContent = reminder.title;
+                li.appendChild(titleDiv);
+
+                const descDiv = document.createElement('div');
+                descDiv.classList.add('reminder-description');
+                descDiv.textContent = reminder.description || 'No description';
+                li.appendChild(descDiv);
+
+                const metaDiv = document.createElement('div');
+                metaDiv.classList.add('reminder-meta');
+                if (reminder.type === 'one_time' && reminder.reminder_at) {
+                    metaDiv.textContent = `One-Time: ${new Date(reminder.reminder_at).toLocaleTimeString()}`;
+                } else if (reminder.type === 'recurring' && reminder.time_of_day) {
+                    // Ensure days_of_week is handled if needed for display
+                    let daysDisplay = '';
+                    if (reminder.days_of_week) {
+                        let daysArray = [];
+                        if (typeof reminder.days_of_week === 'string') {
+                            daysArray = reminder.days_of_week.split(',');
+                        } else if (Array.isArray(reminder.days_of_week)) {
+                            daysArray = reminder.days_of_week;
+                        }
+                        daysDisplay = daysArray.join(', ');
+                    }
+                    metaDiv.textContent = `Recurring: ${reminder.time_of_day} on ${daysDisplay}`;
+                } else {
+                    metaDiv.textContent = `Type: ${reminder.type || 'Unknown'}`;
+                }
+                li.appendChild(metaDiv);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.classList.add('delete-btn');
+                deleteButton.textContent = 'Delete';
+                deleteButton.dataset.id = reminder.id;
+                li.appendChild(deleteButton);
+
+                const checkButton = document.createElement('button');
+                checkButton.classList.add('check-btn');
+                checkButton.textContent = 'Check';
+                checkButton.dataset.id = reminder.id;
+                li.appendChild(checkButton);
+
+                modalList.appendChild(li);
+            });
+
+            // Attach event listeners for buttons in the modal
+            modalList.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation(); // Prevent closing modal
+                    const id = e.target.dataset.id;
+                    if (confirm(`Delete reminder ${id}?`)) {
+                        try {
+                            await apiClient.deleteReminder(id);
+                            appendOutput(`Reminder ${id} deleted successfully.`, false, true);
+                            // Refresh reminders and calendar after deletion
+                            await refreshReminders();
+                            // Re-show the modal with updated list (or close if preferred)
+                            // For simplicity, let's close it
+                            modal.style.display = 'none';
+                        } catch (error) {
+                            appendOutput(`Error deleting reminder: ${error.message}`, true);
+                        }
+                    }
+                });
+            });
+
+            modalList.querySelectorAll('.check-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation(); // Prevent closing modal
+                    const id = e.target.dataset.id;
+                    try {
+                        // Example action - could be marking as completed, snoozing, etc.
+                        // Assuming a PATCH /reminders/:id/check endpoint for example
+                        // await apiClient.checkReminder(id); // You'd need to implement this in apiClient.js
+                        appendOutput(`Reminder ${id} checked (action triggered).`, false, true);
+                         // Refresh reminders and calendar after checking
+                         await refreshReminders();
+                         // Close modal
+                         modal.style.display = 'none';
+                    } catch (error) {
+                        console.log(`Check action triggered for reminder ${id}`);
+                        appendOutput(`Checked reminder ${id} (client-side action).`, false, true);
+                         // Close modal
+                         modal.style.display = 'none';
+                    }
+                });
+            });
+
+        } else {
+            modalList.innerHTML = '<li>No reminders for this day.</li>';
+        }
+
+        // Show the modal
+        modal.style.display = 'block';
+
+        // Close the modal when the user clicks on <span> (x)
+        modalClose.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        // Close the modal when the user clicks anywhere outside of the modal
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    }
+
+    // - Main API Logic -
+    async function refreshReminders() {
+      appendOutput("Refreshing reminders...");
+      try {
+        const reminders = await apiClient.getReminders();
+        window.fetchedReminders = reminders; // Store globally
+
+        // Render the calendar using the fetched reminders
+        renderCalendar(reminders);
+
+        appendOutput("Reminders & Calendar refreshed.", false, true);
+      } catch (error) {
+        console.error("Error refreshing reminders/calendar:", error);
+        appendOutput(`Error refreshing reminders/calendar: ${error.message}`, true);
+      }
+    }
+
+
+    // - Main Logic -
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        // 1. Attempt to get the access token using the auth manager.
+        // This handles initialization, checking auth status, getting the token,
+        // setting it on apiClient, and redirecting to login if needed.
+        const token = await getAccessToken();
+        if (token) {
+          // 2a. If we got a token, the user is authenticated and the token is set on apiClient
+          console.log("Ready to make authenticated API calls.");
+          apiClient.setAuthToken(token); // Not needed if apiClient handles it internally or getToken sets it globally
+          updateUI(true); // Show gated content
+          // - Event Listeners -
+          const logoutButton = document.getElementById("btn-logout");
+          const runTestsButton = document.getElementById("btn-run-tests");
+          const reminderForm = document.getElementById("reminder-form");
+          const typeSelect = document.querySelector('select[name="type"]');
+          if (logoutButton) {
+            logoutButton.addEventListener("click", () => {
+              // Logout and redirect back to the main page or wherever appropriate
+              logout(window.location.origin); // Or specify a different return URL like /login.html
+            });
+          } else {
+            console.warn("Logout button not found in the DOM.");
+          }
+          if (runTestsButton) {
+            runTestsButton.addEventListener("click", refreshReminders);
+          } else {
+            console.warn("Run Tests button not found in the DOM.");
+          }
+          if (reminderForm) {
+            reminderForm.addEventListener('submit', async (e) => {
+              e.preventDefault();
+              const formData = new FormData(reminderForm);
+              const data = {};
+              for (let [key, value] of formData.entries()) {
+                if (key === 'days_of_week' && value) {
+                  // Handle multi-select
+                  const selectedOptions = reminderForm.querySelector('select[name="days_of_week"]');
+                  data[key] = Array.from(selectedOptions.selectedOptions).map(opt => opt.value).join(',');
+                } else if (value !== '') { // Only add non-empty fields
+                  data[key] = value;
+                }
+              }
+              try {
+                const newReminder = await apiClient.createReminder(data);
+                appendOutput("Reminder created:", false, true);
+                appendOutput(newReminder);
+                reminderForm.reset();
+                toggleReminderFields(); // Reset field visibility
+                refreshReminders(); // Refresh the calendar
+              } catch (error) {
+                console.error("Error creating reminder:", error);
+                appendOutput(`Error creating reminder: ${error.message}`, true);
+              }
+            });
+          } else {
+            console.warn("Reminder form not found in the DOM.");
+          }
+          if (typeSelect) {
+            typeSelect.addEventListener('change', toggleReminderFields);
+            // Initialize field visibility on load if a type is pre-selected (unlikely on fresh load, but good practice)
+            toggleReminderFields();
+          }
+          // Initial load of reminders and calendar
+          refreshReminders();
+        } else {
+          // 2b. If getAccessToken returned null, it likely means a redirect is happening.
+          console.log("Redirecting to login or handling error...");
+          updateUI(false);
+        }
+      } catch (error) {
+        console.error("Unexpected error during authentication setup:", error);
+        const outputDiv = document.getElementById('output'); // Assuming you have an output div
+        if (outputDiv) {
+          outputDiv.innerHTML = `<pre class="error">Authentication Error: ${error.message || 'Unknown error'}. Redirecting...</pre>`;
+        }
+        updateUI(false);
+        // Redirect as a safe fallback even on unexpected errors
+        setTimeout(() => {
+          window.location.replace("/login.html");
+        }, 2000);
+      }
+    });
+  </script>
+</body>
+</html>
