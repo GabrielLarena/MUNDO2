@@ -1,14 +1,10 @@
 let auth0Client = null;
 
-// =================================================
-// == CONFIGURE THIS SECTION =======================
-// =================================================
 const config = {
   domain: "dev-x2v3dlltiosc2rnp.us.auth0.com",  
   clientId: "hIQ3gWLV7VtYGC0eobsW5ev2WjQaXPo4",
   audience: "https://dietamigo"
 };
-// =================================================
 
 // --- Helper function for making authenticated API calls ---
 const callApi = async (endpoint, method = 'GET', body = null) => {

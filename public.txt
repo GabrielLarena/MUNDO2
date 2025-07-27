@@ -1,0 +1,2306 @@
+// public/test3.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reminders Test</title>
+  <style>
+    /* - Basic Styling for Output and Auth UI - */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      line-height: 1.6;
+      color: #333;
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+    #auth-actions, #gated-content {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+    }
+    #auth-actions {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+    }
+    #gated-content {
+      background-color: #e8f5e9;
+      border: 1px solid #c8e6c9;
+    }
+    .cta-button {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
+    .cta-button:hover {
+      background-color: #0056b3;
+    }
+    #btn-logout {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #btn-logout:hover {
+      background-color: #c82333;
+    }
+    #btn-run-tests {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    #btn-run-tests:hover {
+      background-color: #218838;
+    }
+    pre {
+      background-color: #f4f4f4;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    #output {
+      margin-top: 1rem;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+    .hidden {
+      display: none;
+    }
+
+    /* Calendar Styles */
+    #calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background-color: #ddd;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 20px;
+    }
+    .calendar-day {
+      background-color: white;
+      min-height: 100px;
+      padding: 5px;
+      position: relative;
+    }
+    .calendar-day-header {
+      font-weight: bold;
+      text-align: center;
+      padding: 5px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .reminder-item {
+      background-color: #e3f2fd;
+      border: 1px solid #bbdefb;
+      border-radius: 4px;
+      padding: 5px;
+      margin-top: 5px;
+      font-size: 0.9em;
+    }
+    .reminder-item.checked {
+      background-color: #e0e0e0;
+      border-color: #bdbdbd;
+      opacity: 0.7;
+    }
+    .reminder-title {
+      font-weight: bold;
+    }
+    .reminder-time {
+      font-size: 0.8em;
+      color: #666;
+    }
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 1rem;
+      align-items: end;
+    }
+    form label {
+      display: flex;
+      flex-direction: column;
+      font-weight: bold;
+    }
+    form input, form select, form button {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+      position: relative; /* For absolute positioning of buttons */
+    }
+    li button {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8em;
+      position: absolute;
+      right: 10px;
+      top: 10px;
+    }
+    li button:hover {
+      background-color: #c82333;
+    }
+    li button:nth-of-type(2) {
+      background-color: #ffc107;
+      color: black;
+      right: 80px; /* Adjust position for second button */
+    }
+    li button:nth-of-type(2):hover {
+      background-color: #e0a800;
+    }
+  </style>
+</head>
+<body>
+  <h1>Reminders Test Panel</h1>
+
+  <!-- - Auth UI - -->
+  <div id="auth-actions">
+    <p>You are not logged in.</p>
+    <a href="login.html" class="cta-button">Go to Login</a>
+  </div>
+
+  <div id="gated-content" class="hidden">
+    <p>You are logged in. <button id="btn-logout">Logout</button></p>
+    <hr>
+
+    <button id="btn-run-tests">Refresh Reminders & Calendar</button>
+
+    <h2>Add New Reminder</h2>
+    <form id="reminder-form">
+      <label>
+        Type:
+        <select name="type" required>
+          <option value="one-time">One-Time</option>
+          <option value="recurring">Recurring</option>
+        </select>
+      </label>
+
+      <!-- One-Time Fields -->
+      <label class="one-time-field">
+        Date & Time:
+        <input type="datetime-local" name="reminder_at">
+      </label>
+
+      <!-- Recurring Fields -->
+      <label class="recurring-field" style="display:none;">
+        Time of Day (24h):
+        <input type="time" name="time_of_day">
+      </label>
+      <label class="recurring-field" style="display:none;">
+        Days of Week:
+        <select name="days_of_week" multiple>
+          <option value="SUN">Sun</option>
+          <option value="MON">Mon</option>
+          <option value="TUE">Tue</option>
+          <option value="WED">Wed</option>
+          <option value="THU">Thu</option>
+          <option value="FRI">Fri</option>
+          <option value="SAT">Sat</option>
+        </select>
+        <small>Hold Ctrl/Cmd to select multiple</small>
+      </label>
+
+      <label>
+        Title:
+        <input type="text" name="title" required>
+      </label>
+      <label>
+        Description:
+        <input type="text" name="description">
+      </label>
+      <button type="submit">Add Reminder</button>
+    </form>
+
+    <h2>Reminders List</h2>
+    <ul id="reminders-list">
+      <li>No reminders loaded yet.</li>
+    </ul>
+
+    <h2>This Week's Calendar</h2>
+    <div id="calendar">
+      <!-- Calendar will be rendered here by JS -->
+    </div>
+
+    <p><strong>Output Log:</strong></p>
+    <div id="output"></div>
+  </div>
+
+  <!-- Auth0 SPA SDK -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+  <!-- Your Application Script -->
+  <script type="module">
+    // Import the centralized auth manager and API client
+    import { getAccessToken, logout } from './src/lib/authManager.js';
+    import apiClient from './src/lib/apiClient.js';
+
+    // --- Helper Functions ---
+    function updateUI(isAuthenticated) {
+      document.getElementById('auth-actions').style.display = isAuthenticated ? 'none' : 'block';
+      const gatedContent = document.getElementById('gated-content');
+      gatedContent.classList.toggle('hidden', !isAuthenticated);
+      gatedContent.style.display = isAuthenticated ? 'block' : 'none';
+
+      // Show/hide form fields based on type selection
+      if (isAuthenticated) {
+        const typeSelect = document.querySelector('select[name="type"]');
+        if (typeSelect) {
+            toggleFormFields.call(typeSelect);
+        }
+      }
+    }
+
+    function appendOutput(text, isError = false, isSuccess = false) {
+      const outputDiv = document.getElementById('output');
+      const pre = document.createElement('pre');
+      if (isError) pre.classList.add('error');
+      if (isSuccess) pre.classList.add('success');
+      const displayText = (typeof text === 'object') ? JSON.stringify(text, null, 2) : String(text);
+      pre.textContent = displayText;
+      outputDiv.appendChild(pre);
+      console.log(text);
+    }
+
+    function toggleFormFields() {
+      const type = this.value;
+      const oneTimeFields = document.querySelectorAll('.one-time-field');
+      const recurringFields = document.querySelectorAll('.recurring-field');
+      if (type === 'one-time') {
+        oneTimeFields.forEach(f => f.style.display = 'flex');
+        recurringFields.forEach(f => f.style.display = 'none');
+      } else {
+        oneTimeFields.forEach(f => f.style.display = 'none');
+        recurringFields.forEach(f => f.style.display = 'flex');
+      }
+    }
+
+    // --- Reminder & Calendar Logic ---
+    async function refreshReminders() {
+      try {
+        appendOutput("Fetching reminders...");
+        // Fetch reminders for the next 30 days
+        const reminders = await apiClient.getReminders(30);
+        displayReminders(reminders);
+        renderCalendar(reminders);
+        appendOutput("Reminders & Calendar refreshed.", false, true);
+      } catch (error) {
+        console.error("Error fetching reminders:", error);
+        appendOutput(`Error fetching reminders: ${error.message}`, true);
+      }
+    }
+
+    function displayReminders(reminders) {
+      const container = document.getElementById('reminders-list');
+      container.innerHTML = '';
+      if (!reminders || reminders.length === 0) {
+        container.innerHTML = '<li>No reminders found.</li>';
+        return;
+      }
+
+      const list = document.createElement('div');
+      reminders.forEach(reminder => {
+        const item = document.createElement('div');
+        item.className = 'reminder-item';
+        if (reminder.is_checked) item.classList.add('checked');
+
+        // Format date/time for display
+        let dateTimeStr = 'N/A';
+        if (reminder.reminder_at) {
+            const dateObj = new Date(reminder.reminder_at);
+            dateTimeStr = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        } else if (reminder.time_of_day && reminder.days_of_week) {
+             dateTimeStr = `Recurring: ${reminder.time_of_day} on ${reminder.days_of_week}`;
+        }
+
+        item.innerHTML = `
+          <div class="reminder-title">${reminder.title}</div>
+          <div><strong>Date/Time:</strong> ${dateTimeStr}</div>
+          <div><strong>Description:</strong> ${reminder.description || 'None'}</div>
+          <div><strong>Type:</strong> ${reminder.time_of_day ? 'Recurring' : 'One-Time'}</div>
+          <div><strong>ID:</strong> ${reminder.id}</div>
+        `;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerText = 'Delete';
+        deleteBtn.dataset.id = reminder.id;
+        deleteBtn.classList.add('delete-btn');
+        item.appendChild(deleteBtn);
+
+        const checkBtn = document.createElement('button');
+        checkBtn.innerText = reminder.is_checked ? 'Uncheck' : 'Check';
+        checkBtn.dataset.id = reminder.id;
+        checkBtn.classList.add('check-btn');
+        item.appendChild(checkBtn);
+
+        list.appendChild(item);
+      });
+      container.appendChild(list);
+
+      // Add event listeners to new buttons
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const id = e.target.dataset.id;
+          if (confirm(`Delete reminder ${id}?`)) {
+            try {
+              await apiClient.deleteReminder(id);
+              appendOutput(`Reminder ${id} deleted successfully.`, false, true);
+              refreshReminders(); // Refresh the list
+            } catch (error) {
+              appendOutput(`Error deleting reminder: ${error.message}`, true);
+            }
+          }
+        });
+      });
+
+      document.querySelectorAll('.check-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const id = e.target.dataset.id;
+          // Find the reminder object in the current list to get its current state
+          // This requires keeping a reference or re-fetching. Let's re-fetch for simplicity here.
+          // A more efficient way is to keep the reminders data in state.
+          try {
+             const currentReminders = await apiClient.getReminders(30);
+             const reminderToUpdate = currentReminders.find(r => r.id == id);
+             if (!reminderToUpdate) {
+                 throw new Error("Reminder not found for update");
+             }
+             const newCheckedState = !reminderToUpdate.is_checked;
+             await apiClient.updateReminder(id, { is_checked: newCheckedState });
+             appendOutput(`Reminder ${id} ${newCheckedState ? 'checked' : 'unchecked'} successfully.`, false, true);
+             refreshReminders(); // Refresh the list and calendar
+          } catch (error) {
+             appendOutput(`Error updating reminder: ${error.message}`, true);
+          }
+        });
+      });
+    }
+
+    function renderCalendar(reminders) {
+      const calendarEl = document.getElementById('calendar');
+      calendarEl.innerHTML = '';
+
+      const today = new Date();
+      const startOfWeek = new Date(today);
+      const dayOfWeek = today.getDay(); // 0 (Sunday) to 6 (Saturday)
+      // Adjust startOfWeek to the most recent Sunday
+      startOfWeek.setDate(today.getDate() - dayOfWeek);
+      startOfWeek.setHours(0, 0, 0, 0); // Start of the day
+
+      // Create header
+      const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      daysOfWeek.forEach(day => {
+        const headerEl = document.createElement('div');
+        headerEl.className = 'calendar-day-header';
+        headerEl.style.fontWeight = 'bold';
+        headerEl.style.textAlign = 'center';
+        headerEl.style.padding = '10px 0';
+        headerEl.style.backgroundColor = '#f0f0f0';
+        headerEl.textContent = day;
+        calendarEl.appendChild(headerEl);
+      });
+
+      // Create 7 day cells
+      for (let i = 0; i < 7; i++) {
+        const currentDate = new Date(startOfWeek);
+        currentDate.setDate(startOfWeek.getDate() + i);
+
+        const dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day';
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const dayOfMonth = currentDate.getDate();
+        const isToday = dateStr === today.toISOString().split('T')[0];
+        dayEl.innerHTML = `<div class="calendar-day-header" style="${isToday ? 'color: blue; font-weight: bold;' : ''}">${dayOfMonth}</div>`;
+
+        // Filter reminders for this day
+        const dayReminders = reminders.filter(r => {
+          if (r.is_checked) return false; // Don't show checked reminders
+          // For one-time reminders
+          if (r.reminder_at) {
+            const reminderDate = new Date(r.reminder_at).toISOString().split('T')[0];
+            return reminderDate === dateStr;
+          }
+          // For recurring reminders (basic check for current day of week)
+          if (r.days_of_week) {
+             const daysOfWeekArray = r.days_of_week.split(',');
+             const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+             const currentDayName = dayNames[currentDate.getDay()];
+             return daysOfWeekArray.includes(currentDayName);
+             // Note: This doesn't check the date range (start_date, end_date) for recurring ones in the calendar view.
+             // A full implementation would need to generate instances based on the recurrence rule and date range.
+          }
+          return false; // Should not happen with valid data
+        });
+
+        // Add reminders to day
+        if (dayReminders.length > 0) {
+          const remindersContainer = document.createElement('div');
+          dayReminders.forEach(reminder => {
+            const reminderEl = document.createElement('div');
+            reminderEl.className = `reminder-item`;
+            // One-time reminder time
+            let timeDisplay = 'All Day'; // Default for recurring if time not directly tied to instance
+            if (reminder.reminder_at) {
+                timeDisplay = new Date(reminder.reminder_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            } else if (reminder.time_of_day) {
+                 timeDisplay = reminder.time_of_day; // Show the recurring time
+            }
+            reminderEl.innerHTML = `
+              <div class="reminder-title">${reminder.title}</div>
+              <div class="reminder-time">${timeDisplay}</div>
+            `;
+            remindersContainer.appendChild(reminderEl);
+          });
+          dayEl.appendChild(remindersContainer);
+        }
+
+        calendarEl.appendChild(dayEl);
+      }
+    }
+
+    // --- Main Logic ---
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        // 1. Attempt to get the access token using the auth manager.
+        const token = await getAccessToken();
+
+        if (token) {
+          console.log("Ready to make authenticated API calls.");
+          updateUI(true); // Show gated content
+
+          // --- Event Listeners ---
+          const logoutButton = document.getElementById("btn-logout");
+          const runTestsButton = document.getElementById("btn-run-tests");
+          const reminderForm = document.getElementById("reminder-form");
+          const typeSelect = document.querySelector('select[name="type"]');
+
+          if (logoutButton) {
+            logoutButton.addEventListener("click", () => {
+              logout(window.location.origin);
+            });
+          } else {
+            console.warn("Logout button not found.");
+          }
+
+          if (runTestsButton) {
+            runTestsButton.addEventListener("click", refreshReminders);
+          } else {
+            console.warn("Run Tests button not found.");
+          }
+
+          if (reminderForm) {
+            reminderForm.addEventListener('submit', async (e) => {
+              e.preventDefault();
+              const formData = new FormData(reminderForm);
+              const data = {};
+              for (let [key, value] of formData.entries()) {
+                  if (key === 'days_of_week' && value) {
+                      // Handle multi-select
+                      const selectedOptions = reminderForm.querySelector('select[name="days_of_week"]');
+                      data[key] = Array.from(selectedOptions.selectedOptions).map(opt => opt.value).join(',');
+                  } else if (value !== '') {
+                       // Only add non-empty fields
+                       // Adjust field names if your API expects different ones
+                       // e.g., if API expects 'reminder_at' for one-time and 'time'/'days' for recurring
+                       data[key] = value;
+                  }
+              }
+              // Basic validation based on type could be added here
+              console.log("Submitting reminder data:", data);
+              try {
+                 await apiClient.createReminder(data);
+                 appendOutput("Reminder created successfully.", false, true);
+                 reminderForm.reset(); // Clear the form
+                 refreshReminders(); // Refresh the list and calendar
+              } catch (error) {
+                 appendOutput(`Error creating reminder: ${error.message}`, true);
+              }
+            });
+          } else {
+             console.warn("Reminder form not found.");
+          }
+
+          if (typeSelect) {
+             typeSelect.addEventListener('change', toggleFormFields);
+             // Initial call to set correct fields on page load
+             toggleFormFields.call(typeSelect);
+          } else {
+              console.warn("Reminder type select not found.");
+          }
+
+          // Load initial data
+          refreshReminders();
+
+        } else {
+          console.log("Redirecting to login or handling error...");
+          updateUI(false);
+        }
+
+      } catch (error) {
+        console.error("Unexpected error during authentication setup:", error);
+        const outputDiv = document.getElementById('output');
+        if (outputDiv) {
+          outputDiv.innerHTML = `<pre class="error">Authentication Error: ${error.message || 'Unknown error'}. Redirecting...</pre>`;
+        }
+        updateUI(false);
+        setTimeout(() => {
+          window.location.replace("/login.html");
+        }, 2000);
+      }
+    });
+
+  </script>
+</body>
+</html>
+
+// public/src/lib/apiClient.js
+/**
+ * A simple client library to interact with the backend API.
+ * Assumes the backend is hosted at the same origin or configured for CORS.
+ * Requires a valid Auth0 access token to be set before making requests.
+ */
+class ApiClient {
+    constructor(basePath = '/api') {
+        this.basePath = basePath;
+        this.token = null;
+    }
+    /**
+     * Sets the authentication token for subsequent requests.
+     * @param {string} token - The JWT access token from Auth0.
+     */
+    setAuthToken(token) {
+        this.token = token;
+    }
+    /**
+     * Helper to make HTTP requests.
+     * @private
+     */
+    async _request(url, options = {}) {
+        if (!this.token) {
+            console.error("API Client: Auth token not set. Please call setAuthToken(token).");
+            throw new Error("Authentication token is required.");
+        }
+        const fullUrl = `${this.basePath}${url}`;
+        const defaultHeaders = {
+            'Authorization': `Bearer ${this.token}`,
+            'Content-Type': 'application/json'
+        };
+        const config = {
+            ...options,
+            headers: {
+                ...defaultHeaders,
+                ...options.headers
+            }
+        };
+        try {
+            const response = await fetch(fullUrl, config);
+            if (!response.ok) {
+                // Try to parse error message from response body
+                let errorMessage = `HTTP error! status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorMessage;
+                } catch (e) {
+                    // Ignore if error body isn't JSON
+                }
+                throw new Error(errorMessage);
+            }
+            // If the response is 204 No Content, return null or an empty object
+            if (response.status === 204) {
+                return null;
+            }
+            return await response.json();
+        } catch (error) {
+            console.error(`API Request failed: ${fullUrl}`, error);
+            throw error; // Re-throw for the caller to handle
+        }
+    }
+    // --- Profile ---
+    async getProfile() {
+        return this._request('/profile');
+    }
+    async updateProfile(profileData) {
+        return this._request('/profile', {
+            method: 'PATCH',
+            body: JSON.stringify(profileData)
+        });
+    }
+    // --- Food Items (Catalog) ---
+    // Note: Loading from CSV is typically a backend utility, not exposed to standard frontend users.
+    // If needed, a specific admin function could be added.
+    // --- Daily Food Log (with Meal Grouping) ---
+    /**
+     * Fetches the food log for a specific date, grouped into meals.
+     * @param {string} date - Date in YYYY-MM-DD format. Defaults to today if omitted.
+     * @returns {Promise<Array>} - A promise that resolves to an array of meal objects.
+     *   Each meal: { meal_group_id, logged_at, items: [...] }
+     */
+    async getFoodLog(date) {
+        let url = '/food-log';
+        if (date) {
+            url += `?date=${encodeURIComponent(date)}`;
+        }
+        return this._request(url);
+    }
+    /**
+     * Fetches the total calories, protein, and carbs consumed on a specific date.
+     * @param {string} date - Date in YYYY-MM-DD format. Defaults to today if omitted.
+     * @returns {Promise<Object>} - A promise that resolves to an object with totals.
+     *   { total_energy_kcal, total_protein_g, total_carbs_g }
+     */
+    async getFoodLogTotals(date) {
+        let url = '/food-log/totals';
+        if (date) {
+            url += `?date=${encodeURIComponent(date)}`;
+        }
+        return this._request(url);
+    }
+    /**
+     * Adds a new food item to the log.
+     * If adding to a new meal, omit meal_group_id. The backend will generate one.
+     * If adding to an existing meal, provide the meal_group_id.
+     * @param {Object} logData - The data for the new log entry.
+     *   { food_item_id, log_date, weight_g, meal_group_id (optional) }
+     * @returns {Promise<Object>} - A promise that resolves to the created log entry.
+     */
+    async addFoodLogEntry(logData) {
+        return this._request('/food-log', {
+            method: 'POST',
+            body: JSON.stringify(logData)
+        });
+    }
+    /**
+     * Deletes a specific food log entry by its ID.
+     * This removes the item from its meal group.
+     * @param {number} logId - The ID of the log entry to delete.
+     * @returns {Promise<void>} - A promise that resolves when the entry is deleted.
+     */
+    async deleteFoodLogEntry(logId) {
+        return this._request(`/food-log/${logId}`, {
+            method: 'DELETE'
+        });
+    }
+    // --- Glucose Reports ---
+    async createGlucoseReport(glucoseData) {
+        return this._request('/glucose-reports', {
+            method: 'POST',
+            body: JSON.stringify(glucoseData)
+        });
+    }
+    async getGlucoseReports(limitDays) {
+        let url = '/glucose-reports';
+        if (limitDays) {
+            url += `?limit=${encodeURIComponent(limitDays)}`;
+        }
+        return this._request(url);
+    }
+    // --- Annotations ---
+    async getAnnotations() {
+        return this._request('/annotations');
+    }
+    async createAnnotation(annotationData) {
+        return this._request('/annotations', {
+            method: 'POST',
+            body: JSON.stringify(annotationData)
+        });
+    }
+    async deleteAnnotation(annotationId) {
+        return this._request(`/annotations/${annotationId}`, {
+            method: 'DELETE'
+        });
+    }
+    // --- Unified Reminders ---
+    /**
+     * Fetches one-time reminders within a specified time window.
+     * @param {number} limitDays - Number of days to look back and forward. Defaults to 30.
+     * @returns {Promise<Array>} - A promise that resolves to an array of reminder objects.
+     */
+    async getReminders(limitDays) {
+        let url = '/reminders';
+        if (limitDays) {
+             url += `?limit=${encodeURIComponent(limitDays)}`;
+        }
+        return this._request(url);
+    }
+    /**
+     * Creates a new reminder (either one-time or recurring).
+     * For one-time: { reminder_at, title, description }
+     * For recurring: { time_of_day, days_of_week, title, description }
+     * @param {Object} reminderData - The data for the new reminder.
+     * @returns {Promise<Object>} - A promise that resolves to the created reminder object.
+     */
+    async createReminder(reminderData) {
+        return this._request('/reminders', {
+            method: 'POST',
+            body: JSON.stringify(reminderData)
+        });
+    }
+    /**
+     * Updates an existing reminder.
+     * @param {number} reminderId - The ID of the reminder to update.
+     * @param {Object} updateData - The fields to update.
+     * @returns {Promise<Object>} - A promise that resolves to a success message.
+     */
+    async updateReminder(reminderId, updateData) {
+         return this._request(`/reminders/${reminderId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(updateData)
+        });
+    }
+    /**
+     * Deletes a specific reminder.
+     * @param {number} reminderId - The ID of the reminder to delete.
+     * @returns {Promise<void>} - A promise that resolves when the reminder is deleted.
+     */
+    async deleteReminder(reminderId) {
+        return this._request(`/reminders/${reminderId}`, {
+            method: 'DELETE'
+        });
+    }
+
+  /**
+   * Searches for food items by name.
+   * @param {string} [query] - The search term. If omitted, returns the first 10 items.
+   * @returns {Promise<Array>} - A promise that resolves to an array of food item objects.
+   *                             Returns up to 10 items.
+   */
+  async searchFoodItems(query) {
+    let url = '/food-items/search';
+    if (query) {
+      // Ensure the query is properly URL encoded
+      url += `?q=${encodeURIComponent(query)}`;
+    }
+    return this._request(url);
+  }
+
+}
+// Create a singleton instance for easy import and use
+const apiClient = new ApiClient();
+export default apiClient;
+// Export the class itself in case multiple instances are needed
+export { ApiClient };
+
+// public/src/lib/authManager.js
+// --- Configuration ---
+// Ensure these match your Auth0 application settings
+const AUTH_CONFIG = {
+  domain: 'dev-x2v3dlltiosc2rnp.us.auth0.com',
+  clientId: 'hIQ3gWLV7VtYGC0eobsW5ev2WjQaXPo4',
+  audience: 'https://dietamigo',
+  // redirectUri should point to the page handling the callback (often login.html or the main page if handling there)
+  redirectUri: window.location.origin + '/login.html', // Adjust path if needed
+};
+
+// --- Client Instance and Initialization ---
+let auth0Client = null;
+let initPromise = null; // To handle concurrent init calls
+const TOKEN_STORAGE_KEY = 'access_token'; // Key for localStorage
+
+/**
+ * Initialize the Auth0 client (only once).
+ * Because the SDK is loaded globally, we create the client instance here.
+ * Returns a promise that resolves to the client instance.
+ * @returns {Promise<Auth0Client>}
+ */
+export async function initAuth() {
+  // If initialization is already in progress or done, return the promise/client
+  if (initPromise) {
+    return initPromise;
+  }
+  if (auth0Client) {
+    return auth0Client;
+  }
+
+  // Start initialization and store the promise
+  initPromise = (async () => {
+    try {
+      // Use the globally available 'auth0' object to create the client
+      // Note: The constructor signature might differ slightly from the imported version
+      auth0Client = new auth0.Auth0Client({
+        domain: AUTH_CONFIG.domain,
+        clientId: AUTH_CONFIG.clientId,
+        cacheLocation: 'localstorage', // Defaults to 'memory'
+        useRefreshTokens: true, // Enable for better UX
+        authorizationParams: {
+          audience: AUTH_CONFIG.audience,
+          redirect_uri: AUTH_CONFIG.redirectUri,
+        },
+        // Legacy config options (might be needed depending on the exact global version)
+        // audience: AUTH_CONFIG.audience,
+        // redirect_uri: AUTH_CONFIG.redirectUri
+      });
+      console.log('Auth0 client initialized.');
+      return auth0Client;
+    } catch (error) {
+      console.error('Error initializing Auth0 client:', error);
+      // Reset promise so init can be retried if needed
+      initPromise = null;
+      throw error;
+    }
+  })();
+
+  return initPromise;
+}
+
+/**
+ * Redirect the user to Auth0's Universal Login page.
+ * This function initiates the login flow.
+ */
+export async function login() {
+  try {
+    const client = await initAuth(); // Ensure client is initialized
+    await client.loginWithRedirect({
+      authorizationParams: {
+        audience: AUTH_CONFIG.audience,
+        redirect_uri: AUTH_CONFIG.redirectUri,
+      },
+    });
+  } catch (error) {
+    console.error('Login initiation error:', error);
+    // Handle login initiation error (e.g., display message)
+  }
+}
+
+/**
+ * Call this on your callback page (e.g., /login.html) to complete the redirect flow.
+ * This processes the result from Auth0 and stores the token.
+ * @returns {Promise<Object>} Object containing appState and token.
+ */
+export async function handleRedirectCallback() {
+  try {
+    const client = await initAuth(); // Ensure client is initialized
+
+    // Process the authentication result from the URL
+    const redirectResult = await client.handleRedirectCallback();
+    console.log('Auth0 redirect callback result:', redirectResult);
+
+    // After handling the callback, get the access token
+    // getTokenSilently is often used here or shortly after to ensure token is available
+    const token = await client.getTokenSilently({
+      authorizationParams: {
+        audience: AUTH_CONFIG.audience,
+        redirect_uri: AUTH_CONFIG.redirectUri,
+      },
+    });
+
+    // Store the token in localStorage for easy access by other parts of your app
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+
+    console.log('Auth callback handled, token stored.');
+    // Remove query parameters from the URL for a clean address bar
+    window.history.replaceState({}, document.title, window.location.pathname);
+    return { appState: redirectResult.appState, token };
+  } catch (error) {
+    console.error('Error handling Auth0 redirect callback:', error);
+    // Potentially clear any stale state
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    // Re-throw to allow caller to handle (e.g., redirect to login)
+    throw error;
+  }
+}
+
+/**
+ * Return the current access token.
+ * 1) Checks localStorage for a stored token.
+ * 2) If not found/expired, attempts silent token renewal.
+ * @returns {Promise<string|null>} The access token, or null if unable to retrieve.
+ */
+export async function getAccessToken() {
+  try {
+    // 1) Quick check in your own localStorage key (optional, for easy access)
+    // Note: The SPA SDK manages its own token cache internally.
+    let token = localStorage.getItem(TOKEN_STORAGE_KEY);
+
+    if (token) {
+      // Optional: Add basic expiry check if you store expiry time too
+      // Or just rely on getTokenSilently's internal handling
+      console.log("Token found in localStorage.");
+      return token;
+    }
+
+    // 2) Fallback/Primary: Use Auth0 SDK to get the token (handles internal cache/silent renewal)
+    const client = await initAuth();
+    token = await client.getTokenSilently({
+      authorizationParams: {
+        audience: AUTH_CONFIG.audience,
+        redirect_uri: AUTH_CONFIG.redirectUri, // Make sure redirect_uri matches config
+      },
+    });
+
+    // Mirror it again in localStorage if needed by other non-async parts
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    console.log("Token retrieved via getTokenSilently.");
+    return token;
+  } catch (error) {
+    console.error('Error retrieving access token:', error);
+    // Clear potentially invalid token
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+
+    // Check if it's a login required error (user needs to log in)
+    if (error.error === 'login_required' || error.error === 'consent_required') {
+      console.log('Login required to get token.');
+      return null; // Indicate no token available
+    }
+
+    // Handle other errors (e.g., network issues)
+    // Let the caller decide how to handle unexpected errors
+    throw error;
+  }
+}
+
+/**
+ * Logs the user out both locally and at Auth0,
+ * then redirects to `returnTo`.
+ * @param {string} returnTo - The URL to redirect the user to after logout.
+ */
+export async function logout(returnTo = window.location.origin) {
+  try {
+    // Clear your simple key from localStorage
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+
+    const client = await initAuth(); // Ensure client is initialized
+    await client.logout({
+      logoutParams: {
+        returnTo: returnTo, // URL to return to after logout
+      },
+    });
+    // Note: The SDK handles the redirect, so code below might not execute
+  } catch (error) {
+    console.error('Logout error:', error);
+    // Handle logout error (e.g., display message)
+    // Even if SDK logout fails, local cleanup was done
+    // You might want to redirect manually here if SDK fails
+    window.location.replace(returnTo);
+  }
+}
+
+// public/test2.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Food Log API Test with Auth (Meal Grouping)</title>
+  <style>
+    /* - Basic Styling for Output and Auth UI - */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      line-height: 1.6;
+      color: #333;
+      max-width: 960px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+    #auth-actions, #gated-content {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+    }
+    #auth-actions {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+    }
+    #gated-content {
+      background-color: #e8f5e9;
+      border: 1px solid #c8e6c9;
+    }
+    .cta-button {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
+    .cta-button:hover {
+      background-color: #0056b3;
+    }
+    #btn-logout {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #btn-logout:hover {
+      background-color: #c82333;
+    }
+    #btn-run-tests {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+    }
+    #btn-run-tests:hover {
+      background-color: #218838;
+    }
+    pre {
+      background-color: #f4f4f4;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    #output {
+      margin-top: 1rem;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Food Log API Test (Meal Grouping) with Auth</h1>
+
+  <!-- - Auth UI - -->
+  <div id="auth-actions">
+    <p>You are not logged in.</p>
+    <!-- Redirect button/link to login.html -->
+    <a href="login.html" class="cta-button">Go to Login</a>
+  </div>
+
+  <div id="gated-content" class="hidden">
+    <p>You are logged in. <button id="btn-logout">Logout</button></p>
+    <hr>
+    <p><strong>Instructions:</strong></p>
+    <ol>
+      <li>Ensure your backend server is running.</li>
+      <li>Open the browser's developer console to see detailed logs.</li>
+      <li>Check the output below for API test results.</li>
+    </ol>
+    <button id="btn-run-tests">Run API Tests</button>
+    <p><strong>Output:</strong></p>
+    <div id="output"></div>
+  </div>
+
+  <!-- Auth0 SPA SDK -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+  <!-- Your Application Script -->
+  <script type="module">
+    // Import the centralized auth manager and API client
+    import { getAccessToken, logout } from './src/lib/authManager.js';
+    import apiClient from './src/lib/apiClient.js';
+
+    // --- Helper Functions ---
+    function updateUI(isAuthenticated) {
+      document.getElementById('auth-actions').style.display = isAuthenticated ? 'none' : 'block';
+      const gatedContent = document.getElementById('gated-content');
+      gatedContent.classList.toggle('hidden', !isAuthenticated);
+      gatedContent.style.display = isAuthenticated ? 'block' : 'none';
+    }
+
+    function appendOutput(text, isError = false, isSuccess = false) {
+      const outputDiv = document.getElementById('output');
+      const pre = document.createElement('pre');
+      if (isError) pre.classList.add('error');
+      if (isSuccess) pre.classList.add('success');
+      const displayText = (typeof text === 'object') ? JSON.stringify(text, null, 2) : String(text);
+      pre.textContent = displayText;
+      outputDiv.appendChild(pre);
+      console.log(text);
+    }
+
+    // --- Main Logic ---
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        // 1. Attempt to get the access token using the auth manager.
+        // This handles initialization, checking auth status, getting the token,
+        // setting it on apiClient, and redirecting to login if needed.
+        const token = await getAccessToken();
+
+        if (token) {
+          // 2a. If we got a token, the user is authenticated and the token is set on apiClient
+          console.log("Ready to make authenticated API calls.");
+          apiClient.setAuthToken(token);
+          updateUI(true); // Show gated content
+
+          // --- Event Listeners ---
+          const logoutButton = document.getElementById("btn-logout");
+          const runTestsButton = document.getElementById("btn-run-tests");
+
+          if (logoutButton) {
+            logoutButton.addEventListener("click", () => {
+              // Logout and redirect back to the main page or wherever appropriate
+              logout(window.location.origin); // Or specify a different return URL like /login.html
+            });
+          } else {
+            console.warn("Logout button not found in the DOM.");
+          }
+
+          if (runTestsButton) {
+            runTestsButton.addEventListener("click", runApiTests);
+          } else {
+            console.warn("Run Tests button not found in the DOM.");
+          }
+
+        } else {
+          // 2b. If getAccessToken returned null, it likely means a redirect is happening.
+          console.log("Redirecting to login or handling error...");
+          updateUI(false);
+        }
+
+      } catch (error) {
+        console.error("Unexpected error during authentication setup:", error);
+        const outputDiv = document.getElementById('output');
+        if (outputDiv) {
+          outputDiv.innerHTML = `<pre class="error">Authentication Error: ${error.message || 'Unknown error'}. Redirecting...</pre>`;
+        }
+        updateUI(false);
+        // Redirect as a safe fallback even on unexpected errors
+        setTimeout(() => {
+          window.location.replace("/login.html");
+        }, 2000);
+      }
+    });
+
+    // --- Main API Test Logic (Assumes token is already set by getAccessToken) ---
+    async function runApiTests() {
+      appendOutput("Starting API Tests...");
+      try {
+        // The token should already be set by getAccessToken if the user is authenticated
+
+        // - 1. Fetch User Profile -
+        appendOutput("1. Fetching User Profile...");
+        const profile = await apiClient.getProfile();
+        appendOutput(profile);
+
+        // - 2. Fetch Food Items -
+        appendOutput("2. Fetching Food Items...");
+        const foodItems = await apiClient.searchFoodItems();
+        appendOutput(foodItems);
+
+        // - 3. Fetch Today's Meals -
+        appendOutput("3. Fetching Today's Meals...");
+        const meals = await apiClient.getFoodLog(); // Gets today's log
+        appendOutput("Fetched meals:");
+        appendOutput(meals);
+
+        // - 4. Add an item to a NEW meal -
+        appendOutput("4. Adding item to a NEW meal...");
+        // IMPORTANT: Replace '1' with a valid food_item_id from your database
+        const newItemData = {
+          food_item_id: 1, // <-- REPLACE WITH A VALID ID FROM YOUR DB
+          log_date: new Date().toISOString().split('T')[0], // Today's date
+          weight_g: 100
+          // meal_group_id is omitted to create a new meal
+        };
+        const newMealItem = await apiClient.addFoodLogEntry(newItemData);
+        const newMealGroupId = newMealItem.meal_group_id;
+        appendOutput(`Added item to new meal (Group ID: ${newMealGroupId}):`);
+        appendOutput(newMealItem);
+
+        // - 5. Add another item to the SAME meal (using the meal_group_id from step 4) -
+        appendOutput("5. Adding another item to the SAME meal...");
+        // IMPORTANT: Replace '2' with a DIFFERENT valid food_item_id from your database
+        const anotherItemData = {
+          food_item_id: 2, // <-- REPLACE WITH A DIFFERENT VALID ID FROM YOUR DB
+          log_date: new Date().toISOString().split('T')[0], // Today's date
+          weight_g: 150,
+          meal_group_id: newMealGroupId // Link to the existing meal group
+        };
+        const anotherMealItem = await apiClient.addFoodLogEntry(anotherItemData);
+        appendOutput(`Added item to existing meal (Group ID: ${newMealGroupId}):`);
+        appendOutput(anotherMealItem);
+
+        // - 6. Re-fetch meals to see the additions -
+        appendOutput("6. Re-fetching Meals After Additions...");
+        const mealsAfterAdd = await apiClient.getFoodLog(); // Gets today's log
+        appendOutput("Meals after additions:");
+        appendOutput(mealsAfterAdd);
+
+        // - 7. Get nutritional totals -
+        appendOutput("7. Fetching Today's Nutritional Totals...");
+        const totals = await apiClient.getFoodLogTotals(); // Gets today's totals
+        appendOutput("Today's nutritional totals:");
+        appendOutput(totals);
+
+        // - 8. Delete the second item added -
+        appendOutput(`8. Deleting item with ID ${anotherMealItem.id}...`);
+        await apiClient.deleteFoodLogEntry(anotherMealItem.id);
+        appendOutput(`Deleted item with ID ${anotherMealItem.id}.`);
+
+        // - 9. Re-fetch meals to see final state -
+        appendOutput("9. Re-fetching Meals After Deletion...");
+        const mealsAfterDelete = await apiClient.getFoodLog();
+        appendOutput("Final meals state:");
+        appendOutput(mealsAfterDelete);
+
+        appendOutput("All API Tests Completed Successfully!", false, true); // isSuccess
+
+      } catch (error) {
+        console.error("An error occurred during the test:", error);
+        appendOutput(`- ERROR - ${error.message || error}`, true); // isError
+      }
+    }
+
+  </script>
+</body>
+</html>
+
+// public/refeicao.html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planejamento - Dietamigo</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <a href="index.html">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+      </a>
+    </div>
+    <button class="burger" id="burger" aria-label="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="index.html">🏠 Página Inicial</a></li>
+        <li><a href="login.html">🔐 Log In</a></li>
+        <li><a href="calculo.html">🥗 Dieta</a></li>
+        <li><a href="refeicao.html">🍽️ Pratos</a></li>
+        <li><a href="carreira.html">👔 Carreiras</a></li>
+        <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
+      </ul>
+       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+    </nav>
+  </header>
+  
+  <main class="main-container">
+    <section class="section">
+      <div class="text-content">
+        <h1>Planejamento de Refeições</h1>
+        <p>Organize suas refeições semanais com base nos seus objetivos nutricionais.</p>
+        <button class="cta">Ver Calendário</button>
+      </div>
+    </section>
+  </main>
+  
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-left">
+        <a href="index.html">
+          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
+        </a>
+        <div class="footer-socials">
+          <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
+          <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
+          <a href="#" aria-label="YouTube"><i class="fab fa-youtube social-icon"></i></a>
+        </div>
+      </div>
+      <div class="footer-links">
+        <a href="sobre.html">Sobre nós</a>
+        <a href="carreira.html">Carreiras</a>
+        <a href="#">Política de privacidade</a>
+      </div>
+    </div>
+    <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
+  </footer>
+  
+  <script src="script.js"></script>
+</body>
+</html>
+
+// public/test.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Painel de Testes da API</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; line-height: 1.6; color: #333; max-width: 960px; margin: 20px auto; }
+        section { border: 1px solid #ccc; padding: 1rem; margin-bottom: 2rem; border-radius: 8px; }
+        h1, h2, h3 { color: #000; }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px 0; }
+        button:hover { background-color: #0056b3; }
+        pre { background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; }
+        form { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem; }
+        form input, form select, form button { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        ul { list-style-type: none; padding: 0; }
+        li { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+        li button { background-color: #dc3545; font-size: 0.8em; padding: 5px 10px; }
+        li button:hover { background-color: #c82333; }
+        li button:nth-of-type(2) { background-color: #ffc107; color: black; }
+        li button:nth-of-type(2):hover { background-color: #e0a800; }
+    </style>
+</head>
+<body>
+    <h1>Painel de Testes da API</h1>
+    <div id="auth-actions">
+        <p>Você não está logado.</p>
+        <button id="btn-login">Entrar</button>
+    </div>
+
+    <div id="gated-content" style="display: none;">
+        <p>Você está logado. <button id="btn-logout">Sair</button></p>
+        <hr>
+
+        <section>
+            <h2>Perfil</h2>
+            <button onclick="getProfile()">Atualizar Perfil</button>
+            <pre id="profile-result"></pre>
+            <h3>Atualizar Perfil</h3>
+            <form id="form-update-profile">
+                <input type="text" name="name" placeholder="Nome">
+                <input type="text" name="bio" placeholder="Bio">
+                <input type="text" name="profile_picture_url" placeholder="URL da Foto de Perfil">
+                <input type="number" name="age" placeholder="Idade">
+                <input type="text" name="gender" placeholder="Gênero">
+                <input type="number" step="0.1" name="weight_kg" placeholder="Peso (kg)">
+                <button type="submit">Salvar Perfil</button>
+            </form>
+        </section>
+
+        <section>
+            <h2>Relatórios de Glicose (Últimos 30 Dias)</h2>
+            <button onclick="getGlucose()">Atualizar Dados de Glicose</button>
+            <pre id="glucose-result"></pre>
+            <h3>Adicionar Novo Relatório de Glicose</h3>
+            <form id="form-add-glucose">
+                <input type="number" name="glucose_mg_dl" placeholder="Glicose (mg/dL)" required>
+                <button type="submit">Adicionar Relatório</button>
+            </form>
+        </section>
+
+        <section>
+            <h2>Anotações</h2>
+            <button onclick="getAnnotations()">Atualizar Anotações</button>
+            <ul id="annotations-result"></ul>
+            <h3>Adicionar Nova Anotação</h3>
+            <form id="form-add-annotation">
+                <input type="text" name="title" placeholder="Título" required>
+                <input type="text" name="content" placeholder="Conteúdo" required>
+                <button type="submit">Adicionar Anotação</button>
+            </form>
+        </section>
+
+        <section>
+            <h2>Lembretes Únicos (Próximos 90 Dias)</h2>
+            <button onclick="getReminders()">Atualizar Lembretes</button>
+            <ul id="reminders-result"></ul>
+            <h3>Adicionar Novo Lembrete</h3>
+            <form id="form-add-reminder">
+                <input type="datetime-local" name="reminder_at" required>
+                <input type="text" name="title" placeholder="Título" required>
+                <input type="text" name="description" placeholder="Descrição">
+                <button type="submit">Adicionar Lembrete</button>
+            </form>
+        </section>
+
+        <section>
+            <h2>Lembretes Recorrentes</h2>
+            <button onclick="getRecurringReminders()">Atualizar Lembretes Recorrentes</button>
+            <ul id="recurring-reminders-result"></ul>
+            <h3>Adicionar Novo Lembrete Recorrente</h3>
+            <form id="form-add-recurring-reminder">
+                <input type="time" name="time_of_day" required>
+                <input type="text" name="days_of_week" placeholder="SEG,QUA,SEX" required>
+                <input type="text" name="title" placeholder="Título" required>
+                <input type="text" name="description" placeholder="Descrição">
+                <button type="submit">Adicionar Lembrete Recorrente</button>
+            </form>
+        </section>
+
+        <section>
+            <h2>Diário Alimentar</h2>
+            <div>
+                <input type="date" id="food-log-date">
+                <button id="btn-get-food-log">Buscar Diário da Data</button>
+            </div>
+            <ul id="food-log-result"></ul>
+            <h3>Adicionar Nova Entrada no Diário</h3>
+            <form id="form-add-food-log">
+                <input type="number" name="food_item_id" placeholder="ID do Alimento" required>
+                <input type="date" name="log_date" required>
+                <select name="meal_type" required>
+                    <option value="breakfast">Café da Manhã</option>
+                    <option value="lunch">Almoço</option>
+                    <option value="dinner">Jantar</option>
+                    <option value="snack">Lanche</option>
+                </select>
+                <input type="number" step="0.1" name="carbs_g" placeholder="Carboidratos (g)">
+                <input type="number" step="0.1" name="protein_g" placeholder="Proteína (g)">
+                <button type="submit">Adicionar Entrada</button>
+            </form>
+        </section>
+
+    </div>
+
+    <!-- Auth0 SPA SDK -->
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+    <!-- Your Application Script -->
+    <script src="/test.js"></script>
+</body>
+</html>
+
+
+// public/sobre.html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sobre Nós - Dietamigo</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <a href="index.html">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+      </a>
+    </div>
+    <button class="burger" id="burger" aria-label="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="index.html">🏠 Página Inicial</a></li>
+        <li><a href="login.html">🔐 Log In</a></li>
+        <li><a href="calculo.html">🥗 Dieta</a></li>
+        <li><a href="refeicao.html">🍽️ Pratos</a></li>
+        <li><a href="carreira.html">👔 Carreiras</a></li>
+        <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
+      </ul>
+       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+    </nav>
+  </header>
+
+  <main class="main-container">
+    <section class="section">
+      <div class="text-content">
+        <h1>Sobre o Aplicativo</h1>
+        <p>Somos apaixonados por nutrição, tecnologia e bem-estar. Nossa missão é 
+          ajudar pessoas a terem uma vida mais saudável com informações acessíveis.</p>
+        <p>Com o Dietamigo, você poderá avaliar seu padrão nutricional com as ferramentas 
+          de planejamento e monitoramento, a fim de otimizar sua alimentação e 
+          facilitar a busca por uma vida mais equilibrada e saudável. Nosso objetivo 
+          é transformar o cuidado com a nutrição em algo simples e intuitivo para todos.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="text-content">
+        <h1>Nossa Equipe</h1>
+        <ul>
+          <li><strong>Gabriel Larena Brandão Barbosa</strong></li>
+          <li><strong>José Francisco de Medeiros</strong></li>
+          <li><strong>José Renan Valença Novaes</strong></li>
+          <li><strong>Leonardo de Sousa Araujo</strong></li>
+          </ul>
+      </div>
+    </section>   
+  </main>
+
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-left">
+        <a href="index.html">
+          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
+        </a>
+        <div class="footer-socials">
+          <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
+          <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
+          <a href="#" aria-label="YouTube"><i class="fab fa-youtube social-icon"></i></a>
+        </div>
+      </div>
+      <div class="footer-links">
+        <a href="sobre.html">Sobre nós</a>
+        <a href="carreira.html">Carreiras</a>
+        <a href="#">Política de privacidade</a>
+      </div>
+    </div>
+    <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
+  </footer>
+  
+  <script src="script.js"></script>
+</body>
+</html>
+
+// public/login.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Dietamigo</title>
+  <!-- Auth0 SPA SDK -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+  <!-- Your Application Script (ensure it's loaded AFTER Auth0 SDK) -->
+  <script type="module" src="/src/lib/authManager.js"></script>
+  <style>
+    /* Basic styles to ensure the page is blank during processing */
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #f5f5f5; /* Optional subtle background */
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .processing {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <!-- Minimal content shown only during processing -->
+  <div id="processing-message" class="processing" style="display: none;">
+    <p>Processing login...</p>
+  </div>
+
+  <script type="module">
+    // Import functions from your authManager
+    import { initAuth, handleRedirectCallback, login, logout } from '/src/lib/authManager.js';
+
+    /**
+     * Main function to initialize authentication and handle login flow.
+     */
+    async function initializeAuth() {
+      try {
+        // 1. Initialize the Auth0 client (from authManager.js)
+        const client = await initAuth();
+        console.log("Auth0 client initialized in login.html.");
+
+        // 2. Check if the page was called back from Auth0 (URL contains code/state)
+        const query = window.location.search;
+        if (query.includes("code=") && query.includes("state=")) {
+          console.log("Handling Auth0 redirect callback...");
+          // Show processing message
+          document.getElementById('processing-message').style.display = 'flex';
+
+          // 3. Process the redirect callback (from authManager.js)
+          // This will validate the state, fetch the user profile, get the token, and store it.
+          await handleRedirectCallback();
+
+          // 4. Remove query parameters from the URL for a clean address bar
+          window.history.replaceState({}, document.title, window.location.pathname);
+
+          // 5. Redirect to the main application page after successful login
+          console.log("Redirecting to main page...");
+          window.location.replace("/");
+        } else {
+          // 6. If not a callback, redirect to Auth0 login immediately
+          console.log("Initiating login redirect to Auth0...");
+          // Show processing message
+          document.getElementById('processing-message').style.display = 'flex';
+          // This will redirect the browser to Auth0's Universal Login Page
+          await login();
+        }
+      } catch (error) {
+        console.error("Failed during Auth0 initialization or login flow:", error);
+        // Optionally display an error message to the user
+        document.body.innerHTML = `
+          <div class="processing">
+            <p>Error: ${error.message || 'Unknown error'}. <a href="/">Try Again</a></p>
+          </div>
+        `;
+      }
+    }
+
+    // - Initialize on DOM Load -
+    document.addEventListener("DOMContentLoaded", () => {
+      initializeAuth(); // Call the main async function
+    });
+  </script>
+</body>
+</html>
+
+// public/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Página Inicial</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <a href="index.html">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+      </a>
+    </div>
+    <button class="burger" id="burger" aria-label="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="index.html">🏠 Página Inicial</a></li>
+        <li><a href="login.html">🔐 Log In</a></li>
+        <li><a href="calculo.html">🥗 Dieta</a></li>
+        <li><a href="refeicao.html">🍽️ Pratos</a></li>
+        <li><a href="carreira.html">👔 Carreiras</a></li>
+        <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
+      </ul>
+       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+    </nav>
+  </header>
+
+  <main class="main-container">
+    <!-- Section 1 -->
+    <section class="section">
+      <div class="text-content">
+        <h1>Descomplicando sua dieta!</h1>
+        <p>Calcule os carboidratos e nutrientes da suas refeições de maneira rápida e simples.</p>
+        <a href="calculo.html" class="cta">Explorar</a>
+      </div>
+      <div class="image-content">
+        <img src="img/hero-01.jpg" alt="Imagem Heroi" />
+      </div>
+    </section>
+
+    <!-- Section 2 -->
+    <section class="section">
+      <div class="image-content">
+        <img src="img/hero-02.jpg" alt="Imagem Secundária" />
+      </div>
+      <div class="text-content">
+        <h1>Planeje suas refeições</h1>
+        <p>Receba sugestões baseadas em seus objetivos nutricionais.</p>
+        <a href="refeicao.html" class="cta right">Explorar</a>
+      </div>
+    </section>
+
+    <!-- Section 3: Calendário -->
+    <section class="section">
+      <div class="text-content">
+        <h1>Calendário de Planejamento</h1>
+        <p>Visualize e organize suas refeições e remedios ao longo da semana.</p>
+        <a href="calendario.html" class="cta">Explorar</a>
+      </div>
+      <div class="image-content">
+        <img src="img/hero-04.jpg" alt="Imagem Calendário" />
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-left">
+        <a href="index.html">
+          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
+        </a>
+        <div class="footer-socials">
+          <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
+          <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
+          <a href="#" aria-label="YouTube"><i class="fab fa-youtube social-icon"></i></a>
+        </div>
+      </div>
+      <div class="footer-links">
+        <a href="sobre.html">Sobre nós</a>
+        <a href="carreira.html">Carreiras</a>
+        <a href="#">Política de privacidade</a>
+      </div>
+    </div>
+    <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
+// public/test.js
+let auth0Client = null;
+
+const config = {
+  domain: "dev-x2v3dlltiosc2rnp.us.auth0.com",  
+  clientId: "hIQ3gWLV7VtYGC0eobsW5ev2WjQaXPo4",
+  audience: "https://dietamigo"
+};
+
+// --- Helper function for making authenticated API calls ---
+const callApi = async (endpoint, method = 'GET', body = null) => {
+    try {
+        const token = await auth0Client.getTokenSilently();
+        const options = {
+            method,
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            }
+        };
+        if (body) {
+            options.headers['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(`/api${endpoint}`, options);
+
+        if (response.status === 204) { // Handle successful DELETE with no content
+            return { success: true, status: 204 };
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || "API call failed");
+        }
+
+        return data;
+    } catch (e) {
+        console.error("API call error:", e);
+        alert(`Error: ${e.message}`);
+        throw e;
+    }
+};
+
+
+// --- Render Functions (Update the UI) ---
+const renderJson = (elementId, data) => {
+    document.getElementById(elementId).innerText = JSON.stringify(data, null, 2);
+};
+
+const renderList = (elementId, items, deleteHandler, patchHandler = null) => {
+    const container = document.getElementById(elementId);
+    container.innerHTML = '';
+    if (!items || items.length === 0) {
+        container.innerHTML = '<li>No items found.</li>';
+        return;
+    }
+    items.forEach(item => {
+        const li = document.createElement('li');
+        li.innerHTML = `<pre>${JSON.stringify(item, null, 2)}</pre>`;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerText = 'Delete';
+        deleteBtn.dataset.id = item.id;
+        deleteBtn.onclick = () => deleteHandler(item.id);
+        li.appendChild(deleteBtn);
+
+        if (patchHandler && item.hasOwnProperty('is_checked')) {
+            const patchBtn = document.createElement('button');
+            patchBtn.innerText = `Mark as ${item.is_checked ? 'Unchecked' : 'Checked'}`;
+            patchBtn.dataset.id = item.id;
+            patchBtn.onclick = () => patchHandler(item.id, !item.is_checked);
+            li.appendChild(patchBtn);
+        }
+
+        container.appendChild(li);
+    });
+};
+
+
+// --- API Interaction Functions ---
+
+// Profile
+const getProfile = async () => renderJson('profile-result', await callApi('/profile'));
+const updateProfile = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const body = Object.fromEntries(formData.entries());
+    // Convert empty strings to null and numbers where appropriate
+    for(let key in body) {
+        if(body[key] === '') delete body[key];
+        if(['age', 'weight_kg'].includes(key) && body[key]) body[key] = Number(body[key]);
+    }
+    await callApi('/profile', 'PATCH', body);
+    getProfile();
+};
+
+// Glucose
+const getGlucose = async () => renderJson('glucose-result', await callApi('/glucose-reports?limit=30'));
+const addGlucose = async (e) => {
+    e.preventDefault();
+    const body = { glucose_mg_dl: Number(e.target.glucose_mg_dl.value) };
+    await callApi('/glucose-reports', 'POST', body);
+    e.target.reset();
+    getGlucose();
+};
+
+// Annotations
+const getAnnotations = async () => renderList('annotations-result', await callApi('/annotations'), deleteAnnotation);
+const addAnnotation = async (e) => {
+    e.preventDefault();
+    const body = { title: e.target.title.value, content: e.target.content.value };
+    await callApi('/annotations', 'POST', body);
+    e.target.reset();
+    getAnnotations();
+};
+const deleteAnnotation = async (id) => {
+    if (confirm(`Delete annotation ${id}?`)) {
+        await callApi(`/annotations/${id}`, 'DELETE');
+        getAnnotations();
+    }
+};
+
+// Reminders
+const getReminders = async () => renderList('reminders-result', await callApi('/reminders?limit=90'), deleteReminder, patchReminder);
+const addReminder = async (e) => {
+    e.preventDefault();
+    const body = { reminder_at: e.target.reminder_at.value, title: e.target.title.value, description: e.target.description.value };
+    await callApi('/reminders', 'POST', body);
+    e.target.reset();
+    getReminders();
+};
+const deleteReminder = async (id) => {
+    if (confirm(`Delete reminder ${id}?`)) {
+        await callApi(`/reminders/${id}`, 'DELETE');
+        getReminders();
+    }
+};
+const patchReminder = async (id, is_checked) => {
+    await callApi(`/reminders/${id}`, 'PATCH', { is_checked });
+    getReminders();
+};
+
+// Recurring Reminders
+const getRecurringReminders = async () => renderList('recurring-reminders-result', await callApi('/reminders/recurring'), deleteRecurringReminder);
+const addRecurringReminder = async (e) => {
+    e.preventDefault();
+    const body = { time_of_day: e.target.time_of_day.value, days_of_week: e.target.days_of_week.value, title: e.target.title.value, description: e.target.description.value };
+    await callApi('/reminders/recurring', 'POST', body);
+    e.target.reset();
+    getRecurringReminders();
+};
+const deleteRecurringReminder = async (id) => {
+    if (confirm(`Delete recurring reminder ${id}?`)) {
+        await callApi(`/reminders/recurring/${id}`, 'DELETE');
+        getRecurringReminders();
+    }
+};
+
+// Food Log
+const getFoodLog = async () => {
+    const date = document.getElementById('food-log-date').value;
+    renderList('food-log-result', await callApi(`/food-log?date=${date}`), deleteFoodLog);
+};
+const addFoodLog = async (e) => {
+    e.preventDefault();
+    const body = {
+        food_item_id: Number(e.target.food_item_id.value),
+        log_date: e.target.log_date.value,
+        meal_type: e.target.meal_type.value,
+        carbs_g: Number(e.target.carbs_g.value),
+        protein_g: Number(e.target.protein_g.value)
+    };
+    await callApi('/food-log', 'POST', body);
+    e.target.reset();
+    getFoodLog();
+};
+const deleteFoodLog = async (id) => {
+    if (confirm(`Delete food log entry ${id}?`)) {
+        await callApi(`/food-log/${id}`, 'DELETE');
+        getFoodLog();
+    }
+};
+
+// --- Auth0 Boilerplate & Initial Setup ---
+document.addEventListener("DOMContentLoaded", async () => {
+    auth0Client = await auth0.createAuth0Client({
+        domain: config.domain,
+        clientId: config.clientId,
+        authorizationParams: { audience: config.audience }
+    });
+
+    if (location.search.includes("code=") && location.search.includes("state=")) {
+        await auth0Client.handleRedirectCallback();
+        window.history.replaceState({}, document.title, "/");
+    }
+
+    updateUI();
+
+    // Add event listeners for buttons
+    document.getElementById("btn-login").addEventListener("click", () => auth0Client.loginWithRedirect({
+    authorizationParams: {
+      redirect_uri: window.location.origin
+    }
+  }));
+    document.getElementById("btn-logout").addEventListener("click", () => auth0Client.logout({ logoutParams: { returnTo: window.location.origin } }));
+});
+
+const updateUI = async () => {
+    const isAuthenticated = await auth0Client.isAuthenticated();
+    document.getElementById("auth-actions").style.display = isAuthenticated ? "none" : "block";
+    document.getElementById("gated-content").style.display = isAuthenticated ? "block" : "none";
+
+    if (isAuthenticated) {
+        // Attach form handlers
+        document.getElementById('form-update-profile').addEventListener('submit', updateProfile);
+        document.getElementById('form-add-glucose').addEventListener('submit', addGlucose);
+        document.getElementById('form-add-annotation').addEventListener('submit', addAnnotation);
+        document.getElementById('form-add-reminder').addEventListener('submit', addReminder);
+        document.getElementById('form-add-recurring-reminder').addEventListener('submit', addRecurringReminder);
+        document.getElementById('form-add-food-log').addEventListener('submit', addFoodLog);
+        document.getElementById('btn-get-food-log').addEventListener('click', getFoodLog);
+
+        // Initial data load
+        getProfile();
+        getGlucose();
+        getAnnotations();
+        getReminders();
+        getRecurringReminders();
+        document.getElementById('food-log-date').value = new Date().toISOString().split('T')[0];
+        getFoodLog();
+    }
+};
+
+// public/script.js
+// ------------------------ Burger ------------------------
+
+const burger = document.getElementById('burger');
+const menu = document.getElementById('menu');
+
+burger.addEventListener('click', () => {
+    menu.classList.toggle('show');
+});
+
+// ------------------------ Pop-up ------------------------
+
+const applicationModal = document.getElementById('application-modal');
+const closeButton = document.querySelector('.close-button');
+const openModalBtns = document.querySelectorAll('.open-modal-btn'); // Seleciona todos os botões "Inscrever-se"
+const applicationForm = document.getElementById('application-form');
+const resumeUploadInput = document.getElementById('resume-upload');
+const fileNameSpan = document.getElementById('file-name');
+const uploadStatusDiv = document.getElementById('upload-status');
+
+// Abrir o modal
+openModalBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault(); // Impede o comportamento padrão do link (ir para '#')
+        applicationModal.style.display = 'flex'; // Exibe o modal (usando flex para centralizar)
+        document.body.style.overflow = 'hidden'; // Impede o scroll do corpo da página
+    });
+});
+
+// Fechar o modal
+closeButton.addEventListener('click', () => {
+    applicationModal.style.display = 'none'; // Esconde o modal
+    document.body.style.overflow = ''; // Restaura o scroll do corpo da página
+    // Limpar o formulário e status ao fechar
+    applicationForm.reset();
+    fileNameSpan.textContent = 'Nenhum arquivo selecionado';
+    uploadStatusDiv.textContent = '';
+});
+
+// Fechar o modal clicando fora dele
+window.addEventListener('click', (e) => {
+    if (e.target === applicationModal) {
+        applicationModal.style.display = 'none';
+        document.body.style.overflow = '';
+        // Limpar o formulário e status ao fechar
+        applicationForm.reset();
+        fileNameSpan.textContent = 'Nenhum arquivo selecionado';
+        uploadStatusDiv.textContent = '';
+    }
+});
+
+// Atualizar o nome do arquivo selecionado
+resumeUploadInput.addEventListener('change', () => {
+    if (resumeUploadInput.files.length > 0) {
+        fileNameSpan.textContent = resumeUploadInput.files[0].name;
+    } else {
+        fileNameSpan.textContent = 'Nenhum arquivo selecionado';
+    }
+});
+
+// Submissão do formulário (teste)
+applicationForm.addEventListener('submit', (e) => {
+    e.preventDefault(); // Impede o envio padrão do formulário
+
+    if (resumeUploadInput.files.length === 0) {
+        uploadStatusDiv.style.color = 'red';
+        uploadStatusDiv.textContent = 'Por favor, selecione um arquivo PDF.';
+        return;
+    }
+
+    const file = resumeUploadInput.files[0];
+    if (file.type !== 'application/pdf') {
+        uploadStatusDiv.style.color = 'red';
+        uploadStatusDiv.textContent = 'Por favor, selecione um arquivo PDF válido.';
+        return;
+    }
+
+    // Aqui você enviaria o arquivo para o seu backend
+    uploadStatusDiv.style.color = 'green';
+    uploadStatusDiv.textContent = `Currículo "${file.name}" enviado com sucesso (simulado)!`;
+
+    const formData = new FormData();
+    formData.append('resume', file);
+
+    fetch('/api/upload-resume', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Erro ao enviar o arquivo.');
+        }
+        return response.json();
+    })
+    .then(data => {
+        uploadStatusDiv.style.color = 'green';
+        uploadStatusDiv.textContent = 'Currículo enviado com sucesso!';
+        console.log('Upload bem-sucedido:', data);
+        // Opcional: fechar o modal após um pequeno atraso
+        setTimeout(() => {
+            closeButton.click();
+        }, 2000);
+    })
+    .catch(error => {
+        uploadStatusDiv.style.color = 'red';
+        uploadStatusDiv.textContent = `Erro: ${error.message}`;
+        console.error('Erro no upload:', error);
+    });
+
+});
+// public/calculo.html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calcular Nutrientes - Dietamigo</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <a href="index.html">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+      </a>
+    </div>
+    <button class="burger" id="burger" aria-label="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="index.html">🏠 Página Inicial</a></li>
+        <li><a href="login.html">🔐 Log In</a></li>
+        <li><a href="calculo.html">🥗 Dieta</a></li>
+        <li><a href="refeicao.html">🍽️ Pratos</a></li>
+        <li><a href="carreira.html">👔 Carreiras</a></li>
+        <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
+      </ul>
+       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+    </nav>
+  </header>
+
+  <main class="main-container">
+    <section class="section">
+      <div class="text-content">
+        <h1>Calculadora de Nutrientes</h1>
+        <p>Insira os ingredientes da sua refeição para obter a análise nutricional.</p>
+        <form>
+          <input type="text" placeholder="Ex: Arroz, Frango, Brócolis..." style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;" />
+          <button class="cta">Calcular</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-left">
+        <a href="index.html">
+          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
+        </a>
+        <div class="footer-socials">
+          <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
+          <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
+          <a href="#" aria-label="YouTube"><i class="fab fa-youtube social-icon"></i></a>
+        </div>
+      </div>
+      <div class="footer-links">
+        <a href="sobre.html">Sobre nós</a>
+        <a href="carreira.html">Carreiras</a>
+        <a href="#">Política de privacidade</a>
+      </div>
+    </div>
+    <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
+  </footer>
+  
+  <script src="script.js"></script>
+</body>
+</html>
+
+// public/carreira.html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carreiras - Dietamigo</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <a href="index.html">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+      </a>
+    </div>
+    <button class="burger" id="burger" aria-label="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="index.html">🏠 Página Inicial</a></li>
+        <li><a href="login.html">🔐 Log In</a></li>
+        <li><a href="calculo.html">🥗 Dieta</a></li>
+        <li><a href="refeicao.html">🍽️ Pratos</a></li>
+        <li><a href="carreira.html">👔 Carreiras</a></li>
+        <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
+      </ul>
+       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+    </nav>
+  </header>
+
+  <main class="main-container">
+    <section class="section">
+      <div class="text-content">
+        <h1>Trabalhe Conosco na Dietamigo</h1>
+        <p>Na Dietamigo, estamos construindo um futuro mais saudável, e queremos que você faça 
+          parte disso! Se você é apaixonado por tecnologia, bem-estar e quer ter um impacto 
+          real na vida das pessoas, seu lugar é aqui. Junte-se a uma equipe inovadora e 
+          ajude-nos a descomplicar a jornada de saúde e nutrição para nossos usuários.</p>
+      </div>
+    </section>
+
+    <section class="section" id="vagas">
+    <div class="text-content">
+      <h2>Coleções de Oportunidades</h2>
+      <p>Quer fazer parte do nosso time? Veja as vagas abertas e envie seu currículo!</p>
+
+      <div class="job-card-container">
+        
+        <div class="job-card">
+          <div class="content-area">
+            <h3>Nutricionista</h3>
+          </div>
+          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+        </div>
+        <div class="job-card">
+          <div class="content-area">
+            <h3>Analista de Marketing</h3>
+          </div>
+          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+        </div>
+        <div class="job-card">
+          <div class="content-area">
+            <h3>Analista de Testes (QA)</h3>
+          </div>
+          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+        </div>
+        <div class="job-card">
+          <div class="content-area">
+            <h3>Desenvolvedor(a) Front-End</h3>
+          </div>
+          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+  
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-left">
+        <a href="index.html">
+          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
+        </a>
+        <div class="footer-socials">
+          <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
+          <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
+          <a href="#" aria-label="YouTube"><i class="fab fa-youtube social-icon"></i></a>
+        </div>
+      </div>
+      <div class="footer-links">
+        <a href="sobre.html">Sobre nós</a>
+        <a href="carreira.html">Carreiras</a>
+        <a href="#">Política de privacidade</a>
+      </div>
+    </div>
+    <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
+  </footer>
+  
+  <div id="application-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Enviar Currículo</h2>
+            <p>Selecione seu currículo em formato PDF para se candidatar à vaga.</p>
+            <form id="application-form">
+                <div class="file-upload-wrapper">
+                    <input type="file" id="resume-upload" accept=".pdf" required>
+                    <label for="resume-upload" class="custom-file-upload">
+                        <i class="fas fa-cloud-upload-alt"></i> Escolher Arquivo PDF
+                    </label>
+                    <span id="file-name" class="file-name">Nenhum arquivo selecionado</span>
+                </div>
+                <button type="submit" class="cta">Enviar Candidatura</button>
+            </form>
+            <div id="upload-status" style="margin-top: 15px; color: green; font-weight: bold;"></div>
+        </div>
+    </div>
+  
+  <script src="script.js"></script>
+</body>
+</html>
+

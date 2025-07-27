@@ -10,6 +10,8 @@ const glucoseRouter = require('./routes/glucose.cjs');
 const annotationsRouter = require('./routes/annotations.cjs');
 const remindersRouter = require('./routes/reminders.cjs');
 const foodLogRouter = require('./routes/food-log.cjs');
+const utilsRouter = require('./routes/utils.cjs');
+const foodItemsRouter = require('./routes/food-items.cjs');
 const uploadsRouter = require('./routes/uploads.cjs');
 
 // --- Initialization ---
@@ -39,20 +41,18 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/upload-resume', uploadsRouter);
 
 // --- API Router ---
-// All routes under '/api' will be protected by the checkJwt middleware
 const apiRouter = express.Router();
-apiRouter.use(checkJwt); // Apply authentication to all API routes
-
-// Delegate to resource-specific routers
+apiRouter.use(checkJwt);
 apiRouter.use('/profile', profileRouter);
 apiRouter.use('/glucose-reports', glucoseRouter);
 apiRouter.use('/annotations', annotationsRouter);
 apiRouter.use('/reminders', remindersRouter);
 apiRouter.use('/food-log', foodLogRouter);
+apiRouter.use('/food-items', foodItemsRouter);
 
-// Mount the API router
+// Mount the API routers
 app.use('/api', apiRouter);
-
+app.use('/utils', utilsRouter);
 
 // --- Server Start ---
 app.listen(PORT, () => {
