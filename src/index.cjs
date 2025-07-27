@@ -10,6 +10,7 @@ const glucoseRouter = require('./routes/glucose.cjs');
 const annotationsRouter = require('./routes/annotations.cjs');
 const remindersRouter = require('./routes/reminders.cjs');
 const foodLogRouter = require('./routes/food-log.cjs');
+const uploadsRouter = require('./routes/uploads.cjs');
 
 // --- Initialization ---
 const app = express();
@@ -32,6 +33,10 @@ const checkJwt = auth({
 // --- Middlewares ---
 app.use(express.json());
 app.use(express.static('public'));
+
+app.use('/uploads', express.static('uploads')); 
+
+app.use('/api/upload-resume', uploadsRouter);
 
 // --- API Router ---
 // All routes under '/api' will be protected by the checkJwt middleware
