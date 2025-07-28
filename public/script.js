@@ -11,25 +11,31 @@ burger.addEventListener('click', () => {
 
 const applicationModal = document.getElementById('application-modal');
 const closeButton = document.querySelector('.close-button');
-const openModalBtns = document.querySelectorAll('.open-modal-btn'); // Seleciona todos os botões "Inscrever-se"
+const openModalBtns = document.querySelectorAll('.open-modal-btn');
 const applicationForm = document.getElementById('application-form');
 const resumeUploadInput = document.getElementById('resume-upload');
 const fileNameSpan = document.getElementById('file-name');
 const uploadStatusDiv = document.getElementById('upload-status');
+const jobTitleInput = document.getElementById('job-title-input');
+const selectedJobTitleDisplay = document.getElementById('selected-job-title');
 
 // Abrir o modal
 openModalBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
-        e.preventDefault(); // Impede o comportamento padrão do link (ir para '#')
-        applicationModal.style.display = 'flex'; // Exibe o modal (usando flex para centralizar)
-        document.body.style.overflow = 'hidden'; // Impede o scroll do corpo da página
+        e.preventDefault();
+        const jobTitle = btn.dataset.jobTitle; 
+        selectedJobTitleDisplay.textContent = jobTitle;
+        jobTitleInput.value = jobTitle;
+
+        applicationModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
     });
 });
 
 // Fechar o modal
 closeButton.addEventListener('click', () => {
-    applicationModal.style.display = 'none'; // Esconde o modal
-    document.body.style.overflow = ''; // Restaura o scroll do corpo da página
+    applicationModal.style.display = 'none'; 
+    document.body.style.overflow = ''; 
     // Limpar o formulário e status ao fechar
     applicationForm.reset();
     fileNameSpan.textContent = 'Nenhum arquivo selecionado';
@@ -48,7 +54,7 @@ window.addEventListener('click', (e) => {
     }
 });
 
-// Atualizar o nome do arquivo selecionado
+// Atualizar nome do arquivo selecionado
 resumeUploadInput.addEventListener('change', () => {
     if (resumeUploadInput.files.length > 0) {
         fileNameSpan.textContent = resumeUploadInput.files[0].name;
@@ -57,9 +63,9 @@ resumeUploadInput.addEventListener('change', () => {
     }
 });
 
-// Submissão do formulário (teste)
+// Submissão do formulário
 applicationForm.addEventListener('submit', (e) => {
-    e.preventDefault(); // Impede o envio padrão do formulário
+    e.preventDefault();
 
     if (resumeUploadInput.files.length === 0) {
         uploadStatusDiv.style.color = 'red';
@@ -74,12 +80,9 @@ applicationForm.addEventListener('submit', (e) => {
         return;
     }
 
-    // Aqui você enviaria o arquivo para o seu backend
-    uploadStatusDiv.style.color = 'green';
-    uploadStatusDiv.textContent = `Currículo "${file.name}" enviado com sucesso (simulado)!`;
-
     const formData = new FormData();
     formData.append('resume', file);
+    formData.append('jobTitle', jobTitleInput.value);
 
     fetch('/api/upload-resume', {
         method: 'POST',
@@ -87,7 +90,7 @@ applicationForm.addEventListener('submit', (e) => {
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error('Erro ao enviar o arquivo.');
+            return response.json().then(err => { throw new Error(err.message || 'Erro desconhecido ao enviar o arquivo.'); });
         }
         return response.json();
     })
@@ -95,15 +98,11 @@ applicationForm.addEventListener('submit', (e) => {
         uploadStatusDiv.style.color = 'green';
         uploadStatusDiv.textContent = 'Currículo enviado com sucesso!';
         console.log('Upload bem-sucedido:', data);
-        // Opcional: fechar o modal após um pequeno atraso
-        setTimeout(() => {
-            closeButton.click();
-        }, 2000);
+
     })
     .catch(error => {
         uploadStatusDiv.style.color = 'red';
         uploadStatusDiv.textContent = `Erro: ${error.message}`;
         console.error('Erro no upload:', error);
     });
-
 });

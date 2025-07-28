@@ -346,7 +346,6 @@ iframe {
     height: 100%; 
     overflow: auto; 
     background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
     justify-content: center;
     align-items: center; 
 }
@@ -441,6 +440,10 @@ iframe {
 /* Esconder o input de arquivo padrão */
 #resume-upload {
     display: none;
+}
+
+#upload-status {
+    text-align: center;
 }
 
 .file-name {

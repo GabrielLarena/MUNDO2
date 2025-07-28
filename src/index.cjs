@@ -12,6 +12,7 @@ const remindersRouter = require('./routes/reminders.cjs');
 const foodLogRouter = require('./routes/food-log.cjs');
 const utilsRouter = require('./routes/utils.cjs');
 const foodItemsRouter = require('./routes/food-items.cjs');
+const uploadsRouter = require('./routes/uploads.cjs');
 
 // --- Initialization ---
 const app = express();
@@ -34,6 +35,10 @@ const checkJwt = auth({
 // --- Middlewares ---
 app.use(express.json());
 app.use(express.static('public'));
+
+app.use('/uploads', express.static('uploads')); 
+
+app.use('/api/upload-resume', uploadsRouter);
 
 // --- API Router ---
 const apiRouter = express.Router();
