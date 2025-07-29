@@ -306,9 +306,13 @@
     <p>Você não fez o login, Redirecionando a página...</p>
   </div>
   <div id="gated-content" class="hidden">
-    <p>Você esta logado. <button id="btn-logout">Logout</button></p>
+    <div style="display: flex; justify-content: space-between; width: 100%;">
+       <p>Você esta logado. <button id="btn-logout">Sair</button></p>
+       <button id="btn-run-tests">Recarregar lembretes e Calendario</button>
+     </div>
+    
     <hr>
-    <button id="btn-run-tests">Recarregar lembretes e Calendario</button>
+    
     <h2>adicione um lembrete</h2>
     <form id="reminder-form">
       <label>Tipo:
@@ -345,7 +349,13 @@
       <label>Descrição:
         <textarea name="description"></textarea>
       </label>
-      <button type="submit">Adicionar Lembrete</button>
+      <button type="submit"  style="display: inline-block; padding: 0.5rem 1rem;
+      background-color: #FF9800;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;" >Adicionar Lembrete</button>
     </form>
 
     <!-- Calendar Container -->
@@ -571,7 +581,7 @@
             return;
         }
 
-        modalTitle.textContent = `Reminders for ${dateKey}`;
+        modalTitle.textContent = `Lembretes para ${dateKey}`;
         modalList.innerHTML = ''; // Clear previous list
 
         if (reminders && reminders.length > 0) {
@@ -604,21 +614,21 @@
                         }
                         daysDisplay = daysArray.join(', ');
                     }
-                    metaDiv.textContent = `Recurring: ${reminder.time_of_day} on ${daysDisplay}`;
+                    metaDiv.textContent = `Recorrente: ${reminder.time_of_day} em  ${daysDisplay}`;
                 } else {
-                    metaDiv.textContent = `Type: ${reminder.type || 'Unknown'}`;
+                    metaDiv.textContent = `Tipo: ${reminder.type || 'Unknown'}`;
                 }
                 li.appendChild(metaDiv);
 
                 const deleteButton = document.createElement('button');
                 deleteButton.classList.add('delete-btn');
-                deleteButton.textContent = 'Delete';
+                deleteButton.textContent = 'Deletar';
                 deleteButton.dataset.id = reminder.id;
                 li.appendChild(deleteButton);
 
                 const checkButton = document.createElement('button');
                 checkButton.classList.add('check-btn');
-                checkButton.textContent = 'Check';
+                checkButton.textContent = 'Feito';
                 checkButton.dataset.id = reminder.id;
                 li.appendChild(checkButton);
 
@@ -669,7 +679,7 @@
             });
 
         } else {
-            modalList.innerHTML = '<li>No reminders for this day.</li>';
+            modalList.innerHTML = '<li>Sem lembretes nesse dia.</li>';
         }
 
         // Show the modal

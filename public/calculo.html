@@ -47,6 +47,22 @@
     .cta-button:hover {
         background-color: #218838;
     }
+    #btn-logout {
+      background-color: #dc3545;
+      display: inline-block;
+      font-size: 1rem;
+      padding: 0.75rem 1.5rem;
+      color: white;
+      text-decoration: none;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      width: fit-content;
+    }
+    #btn-logout:hover {
+      background-color: #c82333;
+    }
     .hidden {
         display: none;
     }
@@ -221,7 +237,7 @@
             <p>Você não fez o login, Redirecionando a página...</p>
         </div>
         <div id="gated-content" class="hidden">
-            <p>You are logged in. <button id="btn-logout">Logout</button></p>
+             <p>Você esta logado. <button id="btn-logout">Sair</button></p>
             <hr>
 
             <div id="output" class="hidden"></div> <!-- Hidden by default, shown on error -->

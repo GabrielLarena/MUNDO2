@@ -132,6 +132,22 @@
     .food-item:hover button {
       display: inline-block;
     }
+    #btn-logout {
+      background-color: #dc3545;
+      display: inline-block;
+      font-size: 1rem;
+      padding: 0.75rem 1.5rem;
+      color: white;
+      text-decoration: none;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      width: fit-content;
+    }
+    #btn-logout:hover {
+      background-color: #c82333;
+    }
     /* Output & Loading */
     #output {
       margin-top: 1rem;
@@ -316,14 +332,17 @@
     <section class="section">
       <div class="content-wrapper"> <!-- 5% padding wrapper -->
         <h1>Seus Pratos</h1>
-        <p>Veja e edite suas refeições recentes.</p>
         
         <div id="auth-actions">
           <p>Você não fez o login, Redirecionando a página...</p>
         </div>
         
         <div id="gated-content" class="hidden">
-          <p>Você está logado. <button id="btn-logout">Sair</button></p>
+          <div style="display: flex; justify-content: space-between; width: 100%;">
+           <p>Veja e edite suas refeições recentes.</p>
+           <p>Você está logado. <button id="btn-logout">Sair</button></p>
+          </div>
+          
           <hr>
           
           <!-- Date Filter Section -->
