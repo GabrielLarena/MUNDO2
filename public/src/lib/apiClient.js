@@ -73,6 +73,34 @@ class ApiClient {
     // Note: Loading from CSV is typically a backend utility, not exposed to standard frontend users.
     // If needed, a specific admin function could be added.
     // --- Daily Food Log (with Meal Grouping) ---
+    //
+/**
+ * Fetches the food log for a specific date, grouped into meals.
+ * @param {string} [date] - Date in YYYY-MM-DD format. Defaults to today if omitted.
+ * @param {number} [limit] - Maximum number of meal groups to return.
+ * @param {number} [offset] - Number of meal groups to skip.
+ * @returns {Promise<Array>} - A promise that resolves to an array of meal objects.
+ *   Each meal: { meal_group_id, logged_at, items: [...] }
+ */
+async getFoodLog(date, limit, offset) {
+    const params = new URLSearchParams();
+    
+    if (date) {
+        params.append('date', date);
+    }
+    if (limit !== undefined) {
+        params.append('limit', limit.toString());
+    }
+    if (offset !== undefined) {
+        params.append('offset', offset.toString());
+    }
+    
+    const queryString = params.toString();
+    const url = `/food-log${queryString ? `?${queryString}` : ''}`;
+    
+    return this._request(url);
+}
+
     /**
      * Fetches the food log for a specific date, grouped into meals.
      * @param {string} date - Date in YYYY-MM-DD format. Defaults to today if omitted.
@@ -86,6 +114,7 @@ class ApiClient {
         }
         return this._request(url);
     }
+
     /**
      * Fetches the total calories, protein, and carbs consumed on a specific date.
      * @param {string} date - Date in YYYY-MM-DD format. Defaults to today if omitted.
@@ -124,6 +153,21 @@ class ApiClient {
             method: 'DELETE'
         });
     }
+
+  /**
+   * Updates an existing food log entry.
+   * Sends a PATCH request with only the fields that need to be changed.
+   * @param {number} logId - The ID of the log entry to update.
+   * @param {Object} updateData - An object containing the fields to update and their new values.
+   *                              e.g., { weight_g: 150 } or { meal_group_id: 'new-group-id' }
+   * @returns {Promise<Object>} - A promise that resolves to the updated log entry object.
+   */
+  async updateFoodLogEntry(logId, updateData) {
+    return this._request(`/food-log/${logId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updateData)
+    });
+  }
     // --- Glucose Reports ---
     async createGlucoseReport(glucoseData) {
         return this._request('/glucose-reports', {

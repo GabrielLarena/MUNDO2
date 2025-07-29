@@ -5,19 +5,191 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Calcular Nutrientes - Dietamigo</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
-
+  <!-- Auth0 SPA SDK -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+  <style>
+    /* Basic styles to ensure the page is blank during processing */
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #f5f5f5; /* Optional subtle background */
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .processing {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #666;
+    }
+    #auth-actions, #gated-content {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+    }
+    #auth-actions {
+        background-color: #f8f9fa;
+    }
+    .cta-button {
+        display: inline-block;
+        background-color: #28a745;
+        color: white !important; /* Override default link color */
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+    }
+    .cta-button:hover {
+        background-color: #218838;
+    }
+    .hidden {
+        display: none;
+    }
+    .error {
+        color: red;
+        font-weight: bold;
+    }
+    .success {
+        color: green;
+        font-weight: bold;
+    }
+    #output {
+        margin-top: 1rem;
+        background-color: #f4f4f4;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    .food-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        border-bottom: 1px solid #eee;
+        cursor: pointer; /* Indicate it's clickable */
+    }
+    .food-item:hover {
+        background-color: #f0f0f0; /* Highlight on hover */
+    }
+    .food-item:last-child {
+        border-bottom: none;
+    }
+    .food-item button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        display: none; /* Hide button by default, show on hover/item selection */
+        flex-shrink: 0; /* Prevent button from shrinking */
+        margin-left: 5px; /* Space between text and button */
+    }
+    .food-item:hover button {
+        display: inline-block; /* Show button on hover */
+    }
+    .food-item.selected button {
+         display: inline-block; /* Always show if item is considered selected in results */
+    }
+    .selected-item {
+        display: flex;
+        flex-wrap: wrap; /* Allow wrapping on small screens */
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        border-bottom: 1px solid #eee;
+        gap: 0.5rem; /* Add space between elements */
+    }
+    .selected-item:last-child {
+        border-bottom: none;
+    }
+    .selected-item > span {
+        flex-grow: 1; /* Allow name to take available space */
+        min-width: 100px; /* Minimum width for name */
+    }
+    .selected-item .quantity-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem; /* Space between input and 'g' */
+        flex-shrink: 0; /* Prevent controls from shrinking too much */
+    }
+    .selected-item input {
+        width: 60px;
+        padding: 0.2rem;
+        margin: 0; /* Remove default margin */
+    }
+    .selected-item .calories {
+        min-width: 80px; /* Ensure consistent width for calories */
+        text-align: right; /* Align calories to the right */
+    }
+    .selected-item button {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        flex-shrink: 0; /* Prevent button from shrinking */
+    }
+    .selected-item button:hover {
+        background-color: #c82333;
+    }
+    .totals {
+        margin-top: 1rem;
+        padding: 1rem;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        font-weight: bold;
+        text-align: center; /* Center totals on mobile */
+    }
+    /* Autocomplete dropdown styling */
+    #search-results {
+        position: absolute;
+        border: 1px solid #ccc;
+        border-top: none;
+        z-index: 1000;
+        background-color: white;
+        width: calc(100% - 2rem); /* Adjust based on padding */
+        max-height: 300px;
+        overflow-y: auto;
+        display: none; /* Hidden by default */
+    }
+    #search-container {
+        position: relative; /* Needed for absolute positioning of results */
+        width: 100%;
+    }
+    /* Responsive adjustments for smaller screens */
+    @media (max-width: 768px) {
+        .selected-item {
+            flex-direction: column; /* Stack items vertically on small screens */
+            align-items: flex-start; /* Align items to the left */
+        }
+        .selected-item .quantity-controls,
+        .selected-item .calories,
+        .selected-item button {
+            align-self: flex-end; /* Align controls, calories, and button to the right */
+        }
+        .selected-item > span {
+             width: 100%; /* Full width for name on small screens */
+        }
+        .totals {
+            font-size: 0.9rem; /* Slightly smaller font for totals */
+        }
+    }
+  </style>
 </head>
 <body>
   <header class="header">
-    <div class="logo">
-      <a href="index.html">
-        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
-      </a>
-    </div>
-    <button class="burger" id="burger" aria-label="Menu">
-      <i class="fas fa-bars"></i>
-    </button>
+    <div class="logo"><a href="index.html"><img src="img/logo.png" alt="Logo Dietamigo" class="logo"></a></div>
+    <button class="burger" id="burger" aria-label="Menu"><i class="fas fa-bars"></i></button>
     <nav class="menu" id="menu">
       <ul>
         <li><a href="index.html">🏠 Página Inicial</a></li>
@@ -27,35 +199,57 @@
         <li><a href="carreira.html">👔 Carreiras</a></li>
         <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
       </ul>
-       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+      <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
     </nav>
   </header>
 
-   <main class="main-container">
+  <main class="main-container">
     <section class="section">
       <div class="text-content">
         <h1>Calculadora de Nutrientes</h1>
         <p>Pesquise ingredientes, defina quantidade e adicione ao prato.</p>
-        <div>
-          <input type="text" id="search-input" placeholder="Digite ingrediente..." style="width:100%; padding:0.5rem; margin-bottom:0.5rem;" />
-          <button id="btn-search" class="cta">Buscar</button>
+
+        <!-- Auth UI -->
+        <div id="auth-actions">
+            <p>You are not logged in.</p>
+            <!-- Redirect button/link to login.html -->
+            <a href="login.html" class="cta-button">Go to Login</a>
         </div>
-        <ul id="search-results"></ul>
-        <h2>Ingredientes no prato:</h2>
-        <ul id="selected-items"></ul>
-        <button id="btn-add-log" class="cta" style="margin-top:1rem;">Adicionar Prato ao Log</button>
-        <h2>Totals:</h2>
-        <div id="totals-output"></div>
+        <div id="gated-content" class="hidden">
+            <p>You are logged in. <button id="btn-logout">Logout</button></p>
+            <hr>
+
+            <div id="output" class="hidden"></div> <!-- Hidden by default, shown on error -->
+
+            <div id="search-container">
+              <input type="text" id="search-input" placeholder="Digite ingrediente..." style="width:100%; padding:0.5rem; margin-bottom:0;" />
+              <div id="search-results"></div> <!-- Results dropdown -->
+            </div>
+            <!-- <button id="btn-search" class="cta" style="margin-top: 0.5rem;">Buscar</button> --> <!-- Search button not needed for autocomplete -->
+
+            <div style="margin-top: 2rem;">
+              <h3>Ingredientes Selecionados:</h3>
+              <div id="selected-items" style="border: 1px solid #ccc; border-radius: 4px; padding: 0.5rem; min-height: 50px;"></div>
+              <div class="totals" id="totals">Total: 0 kcal, 0g proteína, 0g carboidrato</div>
+              <button id="btn-add-dish" class="cta" style="margin-top: 1rem; width:100%;">Adicionar Prato</button>
+            </div>
+        </div>
+      </div>
+      <div class="image-content">
+        <img src="img/hero-01.jpg" alt="Imagem Heroi" />
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <div class="footer-top">
-      <div class="footer-left"><a href="index.html"><img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" /></a>
-        <div class="footer-socials">
+    <div class="footer-content">
+      <div class="footer-info">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
+        <p>Seu parceiro digital para uma vida mais saudável.</p>
+        <div class="social-icons">
           <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
           <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
+          <a href="#" aria-label="Twitter"><i class="fab fa-twitter social-icon"></i></a>
           <a href="#" aria-label="YouTube"><i class="fab fa-youtube social-icon"></i></a>
         </div>
       </div>
@@ -68,90 +262,330 @@
     <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
   </footer>
 
-  <script src="script.js"></script>
-  <script type="module">
-    import apiClient from './src/lib/apiClient.js';
-    import { getAccessToken, logout } from './src/lib/authManager.js'; 
-    // Menu mobile
-    document.getElementById('burger').addEventListener('click', () => document.getElementById('menu').classList.toggle('open'));
+  <script src="script.js"></script> <!-- Assuming this handles menu/mobile -->
 
+  <!-- Your Application Script -->
+  <script type="module">
+    // Import functions from your authManager
+    import { initAuth, handleRedirectCallback, login, logout, getAccessToken } from '/src/lib/authManager.js';
+    import { ApiClient } from '/src/lib/apiClient.js';
+
+    // Create an instance of the API client
+    const apiClient = new ApiClient();
+
+    // State for selected items
     let selected = [];
 
-    document.getElementById('btn-search').addEventListener('click', async () => {
-      const q = document.getElementById('search-input').value.trim();
-      const results = await apiClient.searchFoodItems(q || undefined);
-      const ul = document.getElementById('search-results');
-      ul.innerHTML = '';
-      results.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = `${item.name} — ${item.energy_kcal_per_100g} kcal /100 g`;
-        li.addEventListener('click', () => {
-          const weight = prompt(`Quantos gramas de ${item.name}?`);
-          const w = parseFloat(weight);
-          if (!isNaN(w) && w > 0) {
-            selected.push({ ...item, weight_g: w });
-            renderSelected();
-          }
-        });
-        ul.appendChild(li);
-      });
-    });
+    // DOM Elements
+    const authActionsDiv = document.getElementById('auth-actions');
+    const gatedContentDiv = document.getElementById('gated-content');
+    const logoutButton = document.getElementById('btn-logout');
+    const outputDiv = document.getElementById('output');
+    const searchInput = document.getElementById('search-input');
+    const searchResultsDiv = document.getElementById('search-results');
+    const selectedItemsDiv = document.getElementById('selected-items');
+    const totalsDiv = document.getElementById('totals');
+    const addDishButton = document.getElementById('btn-add-dish');
+
+    // --- Helper Functions ---
+    function updateUI(isAuthenticated) {
+        if (isAuthenticated) {
+            authActionsDiv.classList.add('hidden');
+            gatedContentDiv.classList.remove('hidden');
+        } else {
+            authActionsDiv.classList.remove('hidden');
+            gatedContentDiv.classList.add('hidden');
+        }
+    }
+
+    function appendOutput(message, isError = false, isSuccess = false) {
+        outputDiv.classList.remove('hidden');
+        const messageClass = isError ? 'error' : (isSuccess ? 'success' : '');
+        outputDiv.innerHTML += `<div class="${messageClass}">${message}</div>`;
+        outputDiv.scrollTop = outputDiv.scrollHeight; // Auto-scroll
+    }
 
     function renderSelected() {
-      const ul = document.getElementById('selected-items');
-      ul.innerHTML = '';
-      selected.forEach((it, i) => {
-        const li = document.createElement('li');
-        li.textContent = `${it.name}: ${it.weight_g}g → ` +
-          `${((it.energy_kcal_per_100g * it.weight_g)/100).toFixed(1)} kcal, ` +
-          `${((it.protein_g_per_100g * it.weight_g)/100).toFixed(1)}g proteína, ` +
-          `${((it.carbs_g_per_100g * it.weight_g)/100).toFixed(1)}g carboidrato`;
-        const btn = document.createElement('button');
-        btn.textContent = 'Remover';
-        btn.addEventListener('click', () => {
-          selected.splice(i, 1);
-          renderSelected();
+        selectedItemsDiv.innerHTML = '';
+        let totalCalories = 0;
+        let totalProtein = 0;
+        let totalCarbs = 0;
+
+        selected.forEach((item, index) => {
+            // Use the correct field names from the API response
+            const itemCalories = (item.energy_kcal_per_100g * item.quantity_g) / 100;
+            const itemProtein = (item.protein_g_per_100g * item.quantity_g) / 100;
+            const itemCarbs = (item.carbs_g_per_100g * item.quantity_g) / 100;
+
+            totalCalories += itemCalories;
+            totalProtein += itemProtein;
+            totalCarbs += itemCarbs;
+
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'selected-item';
+            itemDiv.innerHTML = `
+                <span>${item.name}</span>
+                <div class="quantity-controls">
+                    <input type="number" value="${item.quantity_g}" min="1" data-index="${index}">
+                    <span>g</span>
+                </div>
+                <div class="calories">${itemCalories.toFixed(1)} kcal</div>
+                <button data-index="${index}">Remover</button>
+            `;
+            selectedItemsDiv.appendChild(itemDiv);
         });
-        li.appendChild(btn);
-        ul.appendChild(li);
-      });
+
+        totalsDiv.textContent = `Total: ${totalCalories.toFixed(1)} kcal, ${totalProtein.toFixed(1)}g proteína, ${totalCarbs.toFixed(1)}g carboidrato`;
+
+        // Add event listeners for quantity changes and remove buttons
+        selectedItemsDiv.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const index = parseInt(e.target.dataset.index);
+                const newQuantity = parseFloat(e.target.value);
+                if (!isNaN(newQuantity) && newQuantity > 0) {
+                    selected[index].quantity_g = newQuantity;
+                    renderSelected(); // Re-render to update totals and calories
+                } else {
+                    e.target.value = selected[index].quantity_g; // Revert if invalid
+                }
+            });
+        });
+
+        selectedItemsDiv.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const index = parseInt(e.target.dataset.index);
+                selected.splice(index, 1);
+                renderSelected(); // Re-render the list and totals
+            });
+        });
     }
 
-    async function calculateTotals() {
-      // O backend fornece totais por data inteira; aqui calculamos manual
-      const total = {
-        total_energy_kcal: selected.reduce((s,e) => s + (e.energy_kcal_per_100g * e.weight_g /100), 0),
-        total_protein_g: selected.reduce((s,e) => s + (e.protein_g_per_100g * e.weight_g /100), 0),
-        total_carbs_g: selected.reduce((s,e) => s + (e.carbs_g_per_100g * e.weight_g /100), 0)
-      };
-      return total;
-    }
+    // --- Autocomplete Search Logic ---
+    let searchTimeout = null;
+    const SEARCH_DELAY = 300; // milliseconds
 
-    document.getElementById('btn-add-log').addEventListener('click', async () => {
-      if (selected.length === 0) {
-        alert('Adicione pelo menos um ingrediente');
-        return;
-      }
-      const log_date = new Date().toISOString().split('T')[0];
-      try {
-        for (const it of selected) {
-          await apiClient.addFoodLogEntry({
-            food_item_id: it.id,
-            log_date,
-            weight_g: it.weight_g
-          });
+    async function performSearch(query) {
+        if (!query) {
+            searchResultsDiv.style.display = 'none';
+            return;
         }
-        const totals = await calculateTotals();
-        document.getElementById('totals-output').textContent =
-          `Prato adicionado: ${totals.total_energy_kcal.toFixed(1)} kcal, ` +
-          `${totals.total_protein_g.toFixed(1)}g proteína, ` +
-          `${totals.total_carbs_g.toFixed(1)}g carboidrato`;
-        selected = [];
-        renderSelected();
-      } catch (err) {
-        console.error(err);
-        alert('Erro ao adicionar prato');
-      }
+
+        try {
+            // appendOutput(`Buscando por: "${query}"...`); // Optional: less verbose
+            const results = await apiClient.searchFoodItems(query);
+            // appendOutput(`Encontrados ${results.length} itens.`, false, true); // Optional
+
+            searchResultsDiv.innerHTML = '';
+            if (results.length === 0) {
+                searchResultsDiv.innerHTML = '<div class="food-item">Nenhum item encontrado.</div>';
+                searchResultsDiv.style.display = 'block';
+                return;
+            }
+
+            results.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'food-item';
+                // Use correct API field names and format
+                itemDiv.innerHTML = `
+                    <div>
+                        <strong>${item.name}</strong>
+                        <div>${item.energy_kcal_per_100g} kcal/100g</div>
+                    </div>
+                    <button data-id="${item.id}"
+                            data-name="${item.name}"
+                            data-calories="${item.energy_kcal_per_100g}"
+                            data-protein="${item.protein_g_per_100g}"
+                            data-carbs="${item.carbs_g_per_100g}">Adicionar</button>
+                `;
+                searchResultsDiv.appendChild(itemDiv);
+
+                // Add click listener to the entire item div for autocomplete selection
+                itemDiv.addEventListener('click', (e) => {
+                     // Check if the click was on the "Adicionar" button itself
+                     if (e.target.tagName === 'BUTTON') {
+                         // Let the button's own listener handle it
+                         return;
+                     }
+                     // Otherwise, simulate clicking the "Adicionar" button
+                     const addButton = itemDiv.querySelector('button');
+                     if (addButton) {
+                         addButton.click();
+                     }
+                 });
+            });
+
+            // Add event listeners to the new "Adicionar" buttons
+            searchResultsDiv.querySelectorAll('button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent the parent div click event
+                    const id = e.target.dataset.id;
+                    const name = e.target.dataset.name;
+                    // Parse floats for numerical values
+                    const calories = parseFloat(e.target.dataset.calories);
+                    const protein = parseFloat(e.target.dataset.protein);
+                    const carbs = parseFloat(e.target.dataset.carbs);
+
+                    // Basic check to ensure data is valid
+                    if (isNaN(calories) || isNaN(protein) || isNaN(carbs)) {
+                         appendOutput(`Erro: Dados inválidos para "${name}".`, true);
+                         return;
+                    }
+
+                    // Check if item is already selected to prevent duplicates (optional)
+                    const isAlreadySelected = selected.some(item => item.id == id);
+                    if (isAlreadySelected) {
+                        appendOutput(`"${name}" já está na lista de selecionados.`, false, true);
+                        return;
+                    }
+
+                    // Add to selected list with default 100g quantity
+                    selected.push({
+                        id: id,
+                        name: name,
+                        energy_kcal_per_100g: calories,
+                        protein_g_per_100g: protein,
+                        carbs_g_per_100g: carbs,
+                        quantity_g: 100
+                    });
+
+                    renderSelected();
+                    appendOutput(`"${name}" adicionado à lista.`, false, true);
+                    searchInput.value = ''; // Clear search input
+                    searchResultsDiv.style.display = 'none'; // Hide dropdown
+                });
+            });
+
+            searchResultsDiv.style.display = 'block'; // Show the dropdown
+
+        } catch (error) {
+            console.error("Search error:", error);
+            appendOutput(`Erro na busca: ${error.message}`, true);
+            searchResultsDiv.innerHTML = `<div class="food-item error">Erro na busca: ${error.message}</div>`;
+            searchResultsDiv.style.display = 'block';
+        }
+    }
+
+    // Debounced search input handler
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        const query = searchInput.value.trim();
+        if (query.length === 0) {
+            searchResultsDiv.style.display = 'none';
+            return;
+        }
+        searchTimeout = setTimeout(() => {
+            performSearch(query);
+        }, SEARCH_DELAY);
+    });
+
+    // Optional: Hide dropdown if user clicks outside
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !searchResultsDiv.contains(e.target)) {
+            searchResultsDiv.style.display = 'none';
+        }
+    });
+
+
+    // --- Auth and API Logic ---
+    async function initializeApp() {
+        try {
+            const token = await getAccessToken();
+            if (token) {
+                console.log("Ready to make authenticated API calls.");
+                apiClient.setAuthToken(token);
+                updateUI(true);
+
+                // --- Event Listeners ---
+                logoutButton.addEventListener('click', async () => {
+                    try {
+                        await logout(window.location.origin);
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                        appendOutput(`Logout Error: ${error.message}`, true);
+                    }
+                });
+
+                // The search button is no longer the primary trigger
+                // searchButton.addEventListener('click', async () => { ... });
+
+                addDishButton.addEventListener('click', async () => {
+                    if (selected.length === 0) {
+                         appendOutput('Nenhum ingrediente selecionado para adicionar ao prato.', true);
+                         return;
+                     }
+
+                     try {
+                         // Example: Add items to "Lunch" meal of today's log
+                         const today = new Date().toISOString().split('T')[0];
+                         let addedCount = 0;
+                         let mealGroupId = null; // To group items into a single meal
+
+                         appendOutput(`Adicionando ${selected.length} item(s) ao prato...`);
+
+                         // Loop through selected items and add them
+                         for (let i = 0; i < selected.length; i++) {
+                             const item = selected[i];
+                             const entryData = {
+                                 food_item_id: item.id,
+                                 // Use log_date as expected by the backend
+                                 log_date: today,
+                                 // Use weight_g as expected by the backend
+                                 weight_g: item.quantity_g,
+                                 // meal: 'Lunch' // Backend API doesn't seem to use 'meal' directly in POST /food-log
+                                 // If meal grouping is needed, we handle it via meal_group_id
+                             };
+
+                             // If we have a meal_group_id from a previous item, add it to the data
+                             if (mealGroupId) {
+                                 entryData.meal_group_id = mealGroupId;
+                             }
+
+                             const result = await apiClient.addFoodLogEntry(entryData);
+
+                             // If this was the first item and we didn't have a meal_group_id,
+                             // capture the one generated by the backend
+                             if (!mealGroupId && result && result.meal_group_id) {
+                                 mealGroupId = result.meal_group_id;
+                             }
+
+                             addedCount++;
+                         }
+
+                         appendOutput(`${addedCount} item(s) adicionado(s) com sucesso ao prato!`, false, true);
+
+                         // Clear selection after adding (optional)
+                         selected = [];
+                         renderSelected();
+
+                     } catch (error) {
+                         console.error("Error adding dish items:", error);
+                         // Improved error message to reflect the actual field names the API expects
+                         if (error.message && error.message.includes("food_item_id, log_date, and a positive weight_g")) {
+                             appendOutput(`Erro ao adicionar item(s) ao prato: Verifique se todos os ingredientes têm ID válido e quantidade positiva.`, true);
+                         } else {
+                             appendOutput(`Erro ao adicionar item(s) ao prato: ${error.message}`, true);
+                         }
+                     }
+                });
+
+
+            } else {
+                console.log("Redirecting to login...");
+                updateUI(false);
+            }
+        } catch (error) {
+            console.error("Unexpected error during setup:", error);
+            appendOutput(`Authentication Error: ${error.message || 'Unknown error'}. Redirecting...`, true);
+            updateUI(false);
+            setTimeout(() => {
+                window.location.replace("/login.html");
+            }, 2000);
+        }
+    }
+
+    // --- Initialize on DOM Load ---
+    document.addEventListener("DOMContentLoaded", () => {
+        initializeApp();
     });
   </script>
 </body>

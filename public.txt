@@ -15,7 +15,8 @@
       margin: 20px auto;
       padding: 0 15px;
     }
-    #auth-actions, #gated-content {
+    #auth-actions,
+    #gated-content {
       padding: 1rem;
       margin-bottom: 1rem;
       border-radius: 8px;
@@ -62,7 +63,6 @@
       cursor: pointer;
       font-size: 1rem;
       font-weight: bold;
-      margin-bottom: 1rem;
     }
     #btn-run-tests:hover {
       background-color: #218838;
@@ -90,176 +90,262 @@
       display: none;
     }
 
-    /* Calendar Styles */
+    /* Reminder Form Styling */
+    form {
+      margin-bottom: 2rem;
+      padding: 1rem;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+    }
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+    }
+
+
+    /* --- Calendar Styling --- */
+    #calendar-container {
+      margin-top: 2rem;
+    }
+    #calendar-header {
+       text-align: center;
+       margin-bottom: 1rem;
+       font-size: 1.5rem;
+       font-weight: bold;
+    }
     #calendar {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 1px;
-      background-color: #ddd;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      overflow: hidden;
-      margin-top: 20px;
+      grid-template-columns: repeat(7, 1fr); /* 7 columns for days of the week */
+      gap: 5px; /* Space between cells */
+      /* max-width: 800px; */ /* Optional: constrain width */
+      margin: 0 auto;
     }
-    .calendar-day {
-      background-color: white;
-      min-height: 100px;
-      padding: 5px;
-      position: relative;
-    }
+
     .calendar-day-header {
-      font-weight: bold;
+      background-color: #e9ecef;
+      padding: 10px 5px;
       text-align: center;
-      padding: 5px 0;
-      border-bottom: 1px solid #eee;
-    }
-    .reminder-item {
-      background-color: #e3f2fd;
-      border: 1px solid #bbdefb;
+      font-weight: bold;
+      border: 1px solid #ced4da;
       border-radius: 4px;
+    }
+
+    .calendar-day {
+      background-color: #ffffff;
+      min-height: 100px; /* Minimum height for day cells */
       padding: 5px;
-      margin-top: 5px;
-      font-size: 0.9em;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      position: relative;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
     }
-    .reminder-item.checked {
-      background-color: #e0e0e0;
-      border-color: #bdbdbd;
-      opacity: 0.7;
+
+    .calendar-day:hover {
+       background-color: #f0f8ff; /* Light blue on hover */
     }
+
+    .calendar-day-number {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .calendar-day.has-reminders {
+      background-color: #fff3cd; /* Yellowish background for days with reminders */
+      border-color: #ffeeba;
+    }
+
+     .calendar-day.has-reminders:hover {
+       background-color: #ffecb3; /* Slightly darker yellow on hover if it has reminders */
+     }
+
+    .calendar-day .reminder-dot {
+       display: inline-block;
+       width: 8px;
+       height: 8px;
+       background-color: #007bff; /* Blue dot */
+       border-radius: 50%;
+       margin: 2px;
+    }
+
+    /* --- Modal Styling --- */
+    #reminder-modal {
+      display: none; /* Hidden by default */
+      position: fixed;
+      z-index: 1000; /* Sit on top */
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto; /* Enable scroll if needed */
+      background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+    }
+
+    #modal-content {
+      background-color: #fefefe;
+      margin: 10% auto; /* 10% from the top and centered */
+      padding: 20px;
+      border: 1px solid #888;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 600px;
+    }
+
+    #modal-close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #modal-close:hover,
+    #modal-close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    #modal-title {
+       margin-top: 0;
+    }
+
+    #modal-reminders-list {
+      list-style: none;
+      padding: 0;
+      margin-top: 1rem;
+    }
+
+    #modal-reminders-list li {
+      padding: 0.75rem;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      margin-bottom: 0.75rem;
+      background-color: #ffffff;
+    }
+
     .reminder-title {
       font-weight: bold;
+      margin-bottom: 0.25rem;
     }
-    .reminder-time {
-      font-size: 0.8em;
-      color: #666;
+    .reminder-description {
+      margin-bottom: 0.25rem;
+      font-size: 0.9em;
     }
-    form {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 1rem;
-      align-items: end;
+    .reminder-meta {
+      font-size: 0.85em;
+      color: #6c757d;
+      margin-bottom: 0.5rem;
     }
-    form label {
-      display: flex;
-      flex-direction: column;
-      font-weight: bold;
-    }
-    form input, form select, form button {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    ul {
-      list-style-type: none;
-      padding: 0;
-    }
-    li {
-      border-bottom: 1px solid #eee;
-      padding-bottom: 10px;
-      margin-bottom: 10px;
-      position: relative; /* For absolute positioning of buttons */
-    }
-    li button {
+    .delete-btn,
+    .check-btn {
       background-color: #dc3545;
       color: white;
       border: none;
-      padding: 5px 10px;
+      padding: 0.25rem 0.5rem;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 0.8em;
-      position: absolute;
-      right: 10px;
-      top: 10px;
+      font-size: 0.8rem;
+      margin-right: 0.5rem;
     }
-    li button:hover {
+    .delete-btn:hover {
       background-color: #c82333;
     }
-    li button:nth-of-type(2) {
-      background-color: #ffc107;
-      color: black;
-      right: 80px; /* Adjust position for second button */
+    .check-btn {
+      background-color: #28a745;
     }
-    li button:nth-of-type(2):hover {
-      background-color: #e0a800;
+    .check-btn:hover {
+      background-color: #218838;
     }
+
+    /* --- End Calendar & Modal Styling --- */
+
   </style>
 </head>
 <body>
   <h1>Reminders Test Panel</h1>
-
   <!-- - Auth UI - -->
   <div id="auth-actions">
     <p>You are not logged in.</p>
+    <!-- Redirect button/link to login.html -->
     <a href="login.html" class="cta-button">Go to Login</a>
   </div>
-
   <div id="gated-content" class="hidden">
     <p>You are logged in. <button id="btn-logout">Logout</button></p>
     <hr>
-
     <button id="btn-run-tests">Refresh Reminders & Calendar</button>
-
     <h2>Add New Reminder</h2>
     <form id="reminder-form">
-      <label>
-        Type:
+      <label>Type:
         <select name="type" required>
+          <option value="">Select Type</option>
           <option value="one-time">One-Time</option>
           <option value="recurring">Recurring</option>
         </select>
       </label>
-
-      <!-- One-Time Fields -->
-      <label class="one-time-field">
-        Date & Time:
-        <input type="datetime-local" name="reminder_at">
-      </label>
-
-      <!-- Recurring Fields -->
-      <label class="recurring-field" style="display:none;">
-        Time of Day (24h):
-        <input type="time" name="time_of_day">
-      </label>
-      <label class="recurring-field" style="display:none;">
-        Days of Week:
-        <select name="days_of_week" multiple>
-          <option value="SUN">Sun</option>
-          <option value="MON">Mon</option>
-          <option value="TUE">Tue</option>
-          <option value="WED">Wed</option>
-          <option value="THU">Thu</option>
-          <option value="FRI">Fri</option>
-          <option value="SAT">Sat</option>
-        </select>
-        <small>Hold Ctrl/Cmd to select multiple</small>
-      </label>
-
-      <label>
-        Title:
+      <div id="one-time-fields" class="hidden">
+        <label>Reminder At (ISO 8601):
+          <input type="datetime-local" name="reminder_at">
+        </label>
+      </div>
+      <div id="recurring-fields" class="hidden">
+        <label>Time of Day (HH:MM):
+          <input type="time" name="time_of_day">
+        </label>
+        <label>Days of Week (select multiple):
+          <select name="days_of_week" multiple>
+            <option value="MON">Monday</option>
+            <option value="TUE">Tuesday</option>
+            <option value="WED">Wednesday</option>
+            <option value="THU">Thursday</option>
+            <option value="FRI">Friday</option>
+            <option value="SAT">Saturday</option>
+            <option value="SUN">Sunday</option>
+          </select>
+        </label>
+      </div>
+      <label>Title:
         <input type="text" name="title" required>
       </label>
-      <label>
-        Description:
-        <input type="text" name="description">
+      <label>Description:
+        <textarea name="description"></textarea>
       </label>
       <button type="submit">Add Reminder</button>
     </form>
 
-    <h2>Reminders List</h2>
-    <ul id="reminders-list">
-      <li>No reminders loaded yet.</li>
-    </ul>
-
-    <h2>This Week's Calendar</h2>
-    <div id="calendar">
-      <!-- Calendar will be rendered here by JS -->
+    <!-- Calendar Container -->
+    <div id="calendar-container">
+        <div id="calendar-header"></div>
+        <div id="calendar">
+            <!-- Calendar will be rendered here by JavaScript -->
+        </div>
     </div>
 
-    <p><strong>Output Log:</strong></p>
-    <div id="output"></div>
-  </div>
+    <!-- Modal for displaying reminders on a specific day -->
+    <div id="reminder-modal">
+        <div id="modal-content">
+            <span id="modal-close">&times;</span>
+            <h2 id="modal-title">Reminders for ...</h2>
+            <ul id="modal-reminders-list">
+                <!-- Reminders for the selected day will be populated here -->
+            </ul>
+        </div>
+    </div>
 
+
+  </div>
   <!-- Auth0 SPA SDK -->
   <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
   <!-- Your Application Script -->
@@ -268,320 +354,398 @@
     import { getAccessToken, logout } from './src/lib/authManager.js';
     import apiClient from './src/lib/apiClient.js';
 
-    // --- Helper Functions ---
+    // --- Global Variable to store fetched reminders ---
+    window.fetchedReminders = [];
+
+    // - Helper Functions -
     function updateUI(isAuthenticated) {
       document.getElementById('auth-actions').style.display = isAuthenticated ? 'none' : 'block';
       const gatedContent = document.getElementById('gated-content');
-      gatedContent.classList.toggle('hidden', !isAuthenticated);
-      gatedContent.style.display = isAuthenticated ? 'block' : 'none';
-
-      // Show/hide form fields based on type selection
-      if (isAuthenticated) {
-        const typeSelect = document.querySelector('select[name="type"]');
-        if (typeSelect) {
-            toggleFormFields.call(typeSelect);
-        }
-      }
+      gatedContent.classList.toggle('hidden', !isAuthenticated); // Use classList.toggle for cleaner handling
     }
-
     function appendOutput(text, isError = false, isSuccess = false) {
-      const outputDiv = document.getElementById('output');
-      const pre = document.createElement('pre');
-      if (isError) pre.classList.add('error');
-      if (isSuccess) pre.classList.add('success');
-      const displayText = (typeof text === 'object') ? JSON.stringify(text, null, 2) : String(text);
-      pre.textContent = displayText;
-      outputDiv.appendChild(pre);
-      console.log(text);
-    }
-
-    function toggleFormFields() {
-      const type = this.value;
-      const oneTimeFields = document.querySelectorAll('.one-time-field');
-      const recurringFields = document.querySelectorAll('.recurring-field');
-      if (type === 'one-time') {
-        oneTimeFields.forEach(f => f.style.display = 'flex');
-        recurringFields.forEach(f => f.style.display = 'none');
-      } else {
-        oneTimeFields.forEach(f => f.style.display = 'none');
-        recurringFields.forEach(f => f.style.display = 'flex');
+      const outputDiv = document.getElementById('output'); // Assuming you have an output div
+      if (outputDiv) {
+        const pre = document.createElement('pre');
+        if (isError) pre.classList.add('error');
+        if (isSuccess) pre.classList.add('success');
+        const displayText = (typeof text === 'object') ? JSON.stringify(text, null, 2) : String(text);
+        pre.textContent = displayText;
+        outputDiv.appendChild(pre);
+        console.log(text);
+        // Auto-scroll to the bottom
+        outputDiv.scrollTop = outputDiv.scrollHeight;
       }
     }
 
-    // --- Reminder & Calendar Logic ---
+    // - UI Interaction Helpers -
+    function toggleReminderFields() {
+      const typeSelect = document.querySelector('select[name="type"]');
+      const oneTimeFields = document.getElementById('one-time-fields');
+      const recurringFields = document.getElementById('recurring-fields');
+      if (typeSelect && oneTimeFields && recurringFields) {
+        const selectedType = typeSelect.value;
+        oneTimeFields.classList.toggle('hidden', selectedType !== 'one-time');
+        recurringFields.classList.toggle('hidden', selectedType !== 'recurring');
+        // Set required attributes dynamically
+        const reminderAtInput = document.querySelector('input[name="reminder_at"]');
+        const timeOfDayInput = document.querySelector('input[name="time_of_day"]');
+        const daysOfWeekSelect = document.querySelector('select[name="days_of_week"]');
+        if (reminderAtInput) reminderAtInput.required = (selectedType === 'one-time');
+        if (timeOfDayInput) timeOfDayInput.required = (selectedType === 'recurring');
+        if (daysOfWeekSelect) daysOfWeekSelect.required = (selectedType === 'recurring');
+      }
+    }
+
+    // --- New Calendar Functions ---
+
+    // Function to get the number of days in a month
+    function getDaysInMonth(year, month) {
+        return new Date(year, month + 1, 0).getDate();
+    }
+
+    // Function to get the first day of the month (0=Sunday, 1=Monday, etc.)
+    function getFirstDayOfMonth(year, month) {
+         // getDay() returns 0 for Sunday, but we want 0 for Monday...
+         // Adjusting: 0 (Sun) -> 6, 1 (Mon) -> 0, ..., 6 (Sat) -> 5
+         const dayIndex = new Date(year, month, 1).getDay();
+         return dayIndex === 0 ? 6 : dayIndex - 1;
+    }
+
+    // Function to render the calendar
+    function renderCalendar(reminders) {
+        const calendarEl = document.getElementById('calendar');
+        const headerEl = document.getElementById('calendar-header');
+        if (!calendarEl || !headerEl) {
+            console.error("Calendar elements not found in DOM");
+            return;
+        }
+        calendarEl.innerHTML = ''; // Clear previous calendar
+
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth(); // 0-11
+
+        const monthNames = ["January", "February", "March", "April", "May", "June",
+                            "July", "August", "September", "October", "November", "December"];
+        headerEl.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+        const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+        const firstDayOfMonth = getFirstDayOfMonth(currentYear, currentMonth); // 0=Monday offset
+
+        const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        dayHeaders.forEach(day => {
+            const headerCell = document.createElement('div');
+            headerCell.classList.add('calendar-day-header');
+            headerCell.textContent = day;
+            calendarEl.appendChild(headerCell);
+        });
+
+        // --- Corrected Logic Starts Here ---
+        // Create a map of date strings (YYYY-MM-DD) to reminders for quick lookup
+        // This now considers ANY reminder with a 'reminder_at' field.
+        const remindersByDate = {};
+        if (reminders && Array.isArray(reminders)) {
+            reminders.forEach(reminder => {
+                // Check if the reminder object has the reminder_at property
+                if (reminder.reminder_at) {
+                    try {
+                        // Use the reminder_at field provided by the backend
+                        // which is already calculated for both one-time and recurring instances
+                        const dateKey = new Date(reminder.reminder_at).toISOString().split('T')[0];
+                        if (!remindersByDate[dateKey]) {
+                            remindersByDate[dateKey] = [];
+                        }
+                        remindersByDate[dateKey].push(reminder);
+                    } catch (e) {
+                        console.error("Error processing reminder date:", reminder, e);
+                    }
+                } else {
+                     console.warn("Reminder missing 'reminder_at' field:", reminder);
+                }
+            });
+        }
+        // --- Corrected Logic Ends Here ---
+
+        // Add empty cells for days before the 1st
+        for (let i = 0; i < firstDayOfMonth; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.classList.add('calendar-day', 'empty');
+            calendarEl.appendChild(emptyCell);
+        }
+
+        // Add cells for each day of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayCell = document.createElement('div');
+            dayCell.classList.add('calendar-day');
+            const dayNumber = document.createElement('div');
+            dayNumber.classList.add('calendar-day-number');
+            dayNumber.textContent = day;
+            dayCell.appendChild(dayNumber);
+
+            // Format the date key for this day (YYYY-MM-DD)
+            const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const remindersForDay = remindersByDate[dateKey] || [];
+
+            // Highlight days with reminders
+            if (remindersForDay.length > 0) {
+                dayCell.classList.add('has-reminders');
+                // Optionally, add visual indicators like dots
+                const dotContainer = document.createElement('div');
+                remindersForDay.slice(0, 3).forEach(() => { // Show max 3 dots
+                    const dot = document.createElement('span');
+                    dot.classList.add('reminder-dot');
+                    dotContainer.appendChild(dot);
+                });
+                if (remindersForDay.length > 3) {
+                     const moreDots = document.createElement('span');
+                     moreDots.textContent = '...';
+                     moreDots.style.fontSize = '0.7em';
+                     dotContainer.appendChild(moreDots);
+                }
+                dayCell.appendChild(dotContainer);
+            }
+
+            // Add click event to show reminders for the day
+            dayCell.addEventListener('click', () => {
+                showRemindersForDay(remindersForDay, dateKey);
+            });
+
+            calendarEl.appendChild(dayCell);
+        }
+    }
+
+    // Function to show reminders in the modal for a specific day
+    function showRemindersForDay(reminders, dateKey) {
+        const modal = document.getElementById('reminder-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalList = document.getElementById('modal-reminders-list');
+        const modalClose = document.getElementById('modal-close');
+
+        if (!modal || !modalTitle || !modalList || !modalClose) {
+            console.error("Modal elements not found");
+            return;
+        }
+
+        modalTitle.textContent = `Reminders for ${dateKey}`;
+        modalList.innerHTML = ''; // Clear previous list
+
+        if (reminders && reminders.length > 0) {
+            reminders.forEach(reminder => {
+                const li = document.createElement('li');
+
+                const titleDiv = document.createElement('div');
+                titleDiv.classList.add('reminder-title');
+                titleDiv.textContent = reminder.title;
+                li.appendChild(titleDiv);
+
+                const descDiv = document.createElement('div');
+                descDiv.classList.add('reminder-description');
+                descDiv.textContent = reminder.description || 'No description';
+                li.appendChild(descDiv);
+
+                const metaDiv = document.createElement('div');
+                metaDiv.classList.add('reminder-meta');
+                if (reminder.type === 'one_time' && reminder.reminder_at) {
+                    metaDiv.textContent = `One-Time: ${new Date(reminder.reminder_at).toLocaleTimeString()}`;
+                } else if (reminder.type === 'recurring' && reminder.time_of_day) {
+                    // Ensure days_of_week is handled if needed for display
+                    let daysDisplay = '';
+                    if (reminder.days_of_week) {
+                        let daysArray = [];
+                        if (typeof reminder.days_of_week === 'string') {
+                            daysArray = reminder.days_of_week.split(',');
+                        } else if (Array.isArray(reminder.days_of_week)) {
+                            daysArray = reminder.days_of_week;
+                        }
+                        daysDisplay = daysArray.join(', ');
+                    }
+                    metaDiv.textContent = `Recurring: ${reminder.time_of_day} on ${daysDisplay}`;
+                } else {
+                    metaDiv.textContent = `Type: ${reminder.type || 'Unknown'}`;
+                }
+                li.appendChild(metaDiv);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.classList.add('delete-btn');
+                deleteButton.textContent = 'Delete';
+                deleteButton.dataset.id = reminder.id;
+                li.appendChild(deleteButton);
+
+                const checkButton = document.createElement('button');
+                checkButton.classList.add('check-btn');
+                checkButton.textContent = 'Check';
+                checkButton.dataset.id = reminder.id;
+                li.appendChild(checkButton);
+
+                modalList.appendChild(li);
+            });
+
+            // Attach event listeners for buttons in the modal
+            modalList.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation(); // Prevent closing modal
+                    const id = e.target.dataset.id;
+                    if (confirm(`Delete reminder ${id}?`)) {
+                        try {
+                            await apiClient.deleteReminder(id);
+                            appendOutput(`Reminder ${id} deleted successfully.`, false, true);
+                            // Refresh reminders and calendar after deletion
+                            await refreshReminders();
+                            // Re-show the modal with updated list (or close if preferred)
+                            // For simplicity, let's close it
+                            modal.style.display = 'none';
+                        } catch (error) {
+                            appendOutput(`Error deleting reminder: ${error.message}`, true);
+                        }
+                    }
+                });
+            });
+
+            modalList.querySelectorAll('.check-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation(); // Prevent closing modal
+                    const id = e.target.dataset.id;
+                    try {
+                        // Example action - could be marking as completed, snoozing, etc.
+                        // Assuming a PATCH /reminders/:id/check endpoint for example
+                        // await apiClient.checkReminder(id); // You'd need to implement this in apiClient.js
+                        appendOutput(`Reminder ${id} checked (action triggered).`, false, true);
+                         // Refresh reminders and calendar after checking
+                         await refreshReminders();
+                         // Close modal
+                         modal.style.display = 'none';
+                    } catch (error) {
+                        console.log(`Check action triggered for reminder ${id}`);
+                        appendOutput(`Checked reminder ${id} (client-side action).`, false, true);
+                         // Close modal
+                         modal.style.display = 'none';
+                    }
+                });
+            });
+
+        } else {
+            modalList.innerHTML = '<li>No reminders for this day.</li>';
+        }
+
+        // Show the modal
+        modal.style.display = 'block';
+
+        // Close the modal when the user clicks on <span> (x)
+        modalClose.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        // Close the modal when the user clicks anywhere outside of the modal
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    }
+
+    // - Main API Logic -
     async function refreshReminders() {
+      appendOutput("Refreshing reminders...");
       try {
-        appendOutput("Fetching reminders...");
-        // Fetch reminders for the next 30 days
-        const reminders = await apiClient.getReminders(30);
-        displayReminders(reminders);
+        const reminders = await apiClient.getReminders();
+        window.fetchedReminders = reminders; // Store globally
+
+        // Render the calendar using the fetched reminders
         renderCalendar(reminders);
+
         appendOutput("Reminders & Calendar refreshed.", false, true);
       } catch (error) {
-        console.error("Error fetching reminders:", error);
-        appendOutput(`Error fetching reminders: ${error.message}`, true);
+        console.error("Error refreshing reminders/calendar:", error);
+        appendOutput(`Error refreshing reminders/calendar: ${error.message}`, true);
       }
     }
 
-    function displayReminders(reminders) {
-      const container = document.getElementById('reminders-list');
-      container.innerHTML = '';
-      if (!reminders || reminders.length === 0) {
-        container.innerHTML = '<li>No reminders found.</li>';
-        return;
-      }
 
-      const list = document.createElement('div');
-      reminders.forEach(reminder => {
-        const item = document.createElement('div');
-        item.className = 'reminder-item';
-        if (reminder.is_checked) item.classList.add('checked');
-
-        // Format date/time for display
-        let dateTimeStr = 'N/A';
-        if (reminder.reminder_at) {
-            const dateObj = new Date(reminder.reminder_at);
-            dateTimeStr = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-        } else if (reminder.time_of_day && reminder.days_of_week) {
-             dateTimeStr = `Recurring: ${reminder.time_of_day} on ${reminder.days_of_week}`;
-        }
-
-        item.innerHTML = `
-          <div class="reminder-title">${reminder.title}</div>
-          <div><strong>Date/Time:</strong> ${dateTimeStr}</div>
-          <div><strong>Description:</strong> ${reminder.description || 'None'}</div>
-          <div><strong>Type:</strong> ${reminder.time_of_day ? 'Recurring' : 'One-Time'}</div>
-          <div><strong>ID:</strong> ${reminder.id}</div>
-        `;
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.innerText = 'Delete';
-        deleteBtn.dataset.id = reminder.id;
-        deleteBtn.classList.add('delete-btn');
-        item.appendChild(deleteBtn);
-
-        const checkBtn = document.createElement('button');
-        checkBtn.innerText = reminder.is_checked ? 'Uncheck' : 'Check';
-        checkBtn.dataset.id = reminder.id;
-        checkBtn.classList.add('check-btn');
-        item.appendChild(checkBtn);
-
-        list.appendChild(item);
-      });
-      container.appendChild(list);
-
-      // Add event listeners to new buttons
-      document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          const id = e.target.dataset.id;
-          if (confirm(`Delete reminder ${id}?`)) {
-            try {
-              await apiClient.deleteReminder(id);
-              appendOutput(`Reminder ${id} deleted successfully.`, false, true);
-              refreshReminders(); // Refresh the list
-            } catch (error) {
-              appendOutput(`Error deleting reminder: ${error.message}`, true);
-            }
-          }
-        });
-      });
-
-      document.querySelectorAll('.check-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          const id = e.target.dataset.id;
-          // Find the reminder object in the current list to get its current state
-          // This requires keeping a reference or re-fetching. Let's re-fetch for simplicity here.
-          // A more efficient way is to keep the reminders data in state.
-          try {
-             const currentReminders = await apiClient.getReminders(30);
-             const reminderToUpdate = currentReminders.find(r => r.id == id);
-             if (!reminderToUpdate) {
-                 throw new Error("Reminder not found for update");
-             }
-             const newCheckedState = !reminderToUpdate.is_checked;
-             await apiClient.updateReminder(id, { is_checked: newCheckedState });
-             appendOutput(`Reminder ${id} ${newCheckedState ? 'checked' : 'unchecked'} successfully.`, false, true);
-             refreshReminders(); // Refresh the list and calendar
-          } catch (error) {
-             appendOutput(`Error updating reminder: ${error.message}`, true);
-          }
-        });
-      });
-    }
-
-    function renderCalendar(reminders) {
-      const calendarEl = document.getElementById('calendar');
-      calendarEl.innerHTML = '';
-
-      const today = new Date();
-      const startOfWeek = new Date(today);
-      const dayOfWeek = today.getDay(); // 0 (Sunday) to 6 (Saturday)
-      // Adjust startOfWeek to the most recent Sunday
-      startOfWeek.setDate(today.getDate() - dayOfWeek);
-      startOfWeek.setHours(0, 0, 0, 0); // Start of the day
-
-      // Create header
-      const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      daysOfWeek.forEach(day => {
-        const headerEl = document.createElement('div');
-        headerEl.className = 'calendar-day-header';
-        headerEl.style.fontWeight = 'bold';
-        headerEl.style.textAlign = 'center';
-        headerEl.style.padding = '10px 0';
-        headerEl.style.backgroundColor = '#f0f0f0';
-        headerEl.textContent = day;
-        calendarEl.appendChild(headerEl);
-      });
-
-      // Create 7 day cells
-      for (let i = 0; i < 7; i++) {
-        const currentDate = new Date(startOfWeek);
-        currentDate.setDate(startOfWeek.getDate() + i);
-
-        const dayEl = document.createElement('div');
-        dayEl.className = 'calendar-day';
-        const dateStr = currentDate.toISOString().split('T')[0];
-        const dayOfMonth = currentDate.getDate();
-        const isToday = dateStr === today.toISOString().split('T')[0];
-        dayEl.innerHTML = `<div class="calendar-day-header" style="${isToday ? 'color: blue; font-weight: bold;' : ''}">${dayOfMonth}</div>`;
-
-        // Filter reminders for this day
-        const dayReminders = reminders.filter(r => {
-          if (r.is_checked) return false; // Don't show checked reminders
-          // For one-time reminders
-          if (r.reminder_at) {
-            const reminderDate = new Date(r.reminder_at).toISOString().split('T')[0];
-            return reminderDate === dateStr;
-          }
-          // For recurring reminders (basic check for current day of week)
-          if (r.days_of_week) {
-             const daysOfWeekArray = r.days_of_week.split(',');
-             const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-             const currentDayName = dayNames[currentDate.getDay()];
-             return daysOfWeekArray.includes(currentDayName);
-             // Note: This doesn't check the date range (start_date, end_date) for recurring ones in the calendar view.
-             // A full implementation would need to generate instances based on the recurrence rule and date range.
-          }
-          return false; // Should not happen with valid data
-        });
-
-        // Add reminders to day
-        if (dayReminders.length > 0) {
-          const remindersContainer = document.createElement('div');
-          dayReminders.forEach(reminder => {
-            const reminderEl = document.createElement('div');
-            reminderEl.className = `reminder-item`;
-            // One-time reminder time
-            let timeDisplay = 'All Day'; // Default for recurring if time not directly tied to instance
-            if (reminder.reminder_at) {
-                timeDisplay = new Date(reminder.reminder_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            } else if (reminder.time_of_day) {
-                 timeDisplay = reminder.time_of_day; // Show the recurring time
-            }
-            reminderEl.innerHTML = `
-              <div class="reminder-title">${reminder.title}</div>
-              <div class="reminder-time">${timeDisplay}</div>
-            `;
-            remindersContainer.appendChild(reminderEl);
-          });
-          dayEl.appendChild(remindersContainer);
-        }
-
-        calendarEl.appendChild(dayEl);
-      }
-    }
-
-    // --- Main Logic ---
+    // - Main Logic -
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         // 1. Attempt to get the access token using the auth manager.
+        // This handles initialization, checking auth status, getting the token,
+        // setting it on apiClient, and redirecting to login if needed.
         const token = await getAccessToken();
-
         if (token) {
+          // 2a. If we got a token, the user is authenticated and the token is set on apiClient
           console.log("Ready to make authenticated API calls.");
+          apiClient.setAuthToken(token); // Not needed if apiClient handles it internally or getToken sets it globally
           updateUI(true); // Show gated content
-
-          // --- Event Listeners ---
+          // - Event Listeners -
           const logoutButton = document.getElementById("btn-logout");
           const runTestsButton = document.getElementById("btn-run-tests");
           const reminderForm = document.getElementById("reminder-form");
           const typeSelect = document.querySelector('select[name="type"]');
-
           if (logoutButton) {
             logoutButton.addEventListener("click", () => {
-              logout(window.location.origin);
+              // Logout and redirect back to the main page or wherever appropriate
+              logout(window.location.origin); // Or specify a different return URL like /login.html
             });
           } else {
-            console.warn("Logout button not found.");
+            console.warn("Logout button not found in the DOM.");
           }
-
           if (runTestsButton) {
             runTestsButton.addEventListener("click", refreshReminders);
           } else {
-            console.warn("Run Tests button not found.");
+            console.warn("Run Tests button not found in the DOM.");
           }
-
           if (reminderForm) {
             reminderForm.addEventListener('submit', async (e) => {
               e.preventDefault();
               const formData = new FormData(reminderForm);
               const data = {};
               for (let [key, value] of formData.entries()) {
-                  if (key === 'days_of_week' && value) {
-                      // Handle multi-select
-                      const selectedOptions = reminderForm.querySelector('select[name="days_of_week"]');
-                      data[key] = Array.from(selectedOptions.selectedOptions).map(opt => opt.value).join(',');
-                  } else if (value !== '') {
-                       // Only add non-empty fields
-                       // Adjust field names if your API expects different ones
-                       // e.g., if API expects 'reminder_at' for one-time and 'time'/'days' for recurring
-                       data[key] = value;
-                  }
+                if (key === 'days_of_week' && value) {
+                  // Handle multi-select
+                  const selectedOptions = reminderForm.querySelector('select[name="days_of_week"]');
+                  data[key] = Array.from(selectedOptions.selectedOptions).map(opt => opt.value).join(',');
+                } else if (value !== '') { // Only add non-empty fields
+                  data[key] = value;
+                }
               }
-              // Basic validation based on type could be added here
-              console.log("Submitting reminder data:", data);
               try {
-                 await apiClient.createReminder(data);
-                 appendOutput("Reminder created successfully.", false, true);
-                 reminderForm.reset(); // Clear the form
-                 refreshReminders(); // Refresh the list and calendar
+                const newReminder = await apiClient.createReminder(data);
+                appendOutput("Reminder created:", false, true);
+                appendOutput(newReminder);
+                reminderForm.reset();
+                toggleReminderFields(); // Reset field visibility
+                refreshReminders(); // Refresh the calendar
               } catch (error) {
-                 appendOutput(`Error creating reminder: ${error.message}`, true);
+                console.error("Error creating reminder:", error);
+                appendOutput(`Error creating reminder: ${error.message}`, true);
               }
             });
           } else {
-             console.warn("Reminder form not found.");
+            console.warn("Reminder form not found in the DOM.");
           }
-
           if (typeSelect) {
-             typeSelect.addEventListener('change', toggleFormFields);
-             // Initial call to set correct fields on page load
-             toggleFormFields.call(typeSelect);
-          } else {
-              console.warn("Reminder type select not found.");
+            typeSelect.addEventListener('change', toggleReminderFields);
+            // Initialize field visibility on load if a type is pre-selected (unlikely on fresh load, but good practice)
+            toggleReminderFields();
           }
-
-          // Load initial data
+          // Initial load of reminders and calendar
           refreshReminders();
-
         } else {
+          // 2b. If getAccessToken returned null, it likely means a redirect is happening.
           console.log("Redirecting to login or handling error...");
           updateUI(false);
         }
-
       } catch (error) {
         console.error("Unexpected error during authentication setup:", error);
-        const outputDiv = document.getElementById('output');
+        const outputDiv = document.getElementById('output'); // Assuming you have an output div
         if (outputDiv) {
           outputDiv.innerHTML = `<pre class="error">Authentication Error: ${error.message || 'Unknown error'}. Redirecting...</pre>`;
         }
         updateUI(false);
+        // Redirect as a safe fallback even on unexpected errors
         setTimeout(() => {
           window.location.replace("/login.html");
         }, 2000);
       }
     });
-
   </script>
 </body>
 </html>
@@ -713,6 +877,21 @@ class ApiClient {
             method: 'DELETE'
         });
     }
+
+  /**
+   * Updates an existing food log entry.
+   * Sends a PATCH request with only the fields that need to be changed.
+   * @param {number} logId - The ID of the log entry to update.
+   * @param {Object} updateData - An object containing the fields to update and their new values.
+   *                              e.g., { weight_g: 150 } or { meal_group_id: 'new-group-id' }
+   * @returns {Promise<Object>} - A promise that resolves to the updated log entry object.
+   */
+  async updateFoodLogEntry(logId, updateData) {
+    return this._request(`/food-log/${logId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updateData)
+    });
+  }
     // --- Glucose Reports ---
     async createGlucoseReport(glucoseData) {
         return this._request('/glucose-reports', {
@@ -1293,21 +1472,207 @@ export async function logout(returnTo = window.location.origin) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Planejamento - Dietamigo</title>
+  <title>Pratos - Dietamigo</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    /* --- Global Layout: 5% padding on sides, max width for meals --- */
+    .content-wrapper {
+      padding-left: 5%;
+      padding-right: 5%;
+    }
 
+    .meal-container {
+      margin: 0 auto 2rem auto; /* Center the container */
+      max-width: 960px; /* Approximate width for 120 chars */
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+
+    .meal-header {
+      font-weight: bold;
+      color: #333;
+      padding: 1rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    /* --- Table Styling for Alignment --- */
+    .meal-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed; /* Ensures consistent column widths */
+    }
+
+    .meal-table th,
+    .meal-table td {
+      padding: 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    .meal-table th {
+      background-color: #f5f5f5;
+      font-weight: bold;
+      color: #555;
+    }
+
+    .meal-table .remove-cell {
+      width: 60px;
+      text-align: center;
+    }
+
+    .meal-table .name-cell {
+      width: 40%;
+    }
+
+    .meal-table .weight-cell,
+    .meal-table .calorie-cell,
+    .meal-table .protein-cell,
+    .meal-table .carbs-cell {
+      width: 15%;
+    }
+
+    /* Remove button */
+    .meal-item-remove-btn {
+      background: none;
+      border: none;
+      color: #dc3545;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0.25rem;
+      border-radius: 4px;
+    }
+
+    .meal-item-remove-btn:hover {
+      color: #c82333;
+      background-color: #f8f9fa;
+    }
+
+    /* Total Row Separator */
+    .meal-table tfoot tr td {
+       border-top: 2px solid #ccc; /* Add the line above the total row */
+       padding-top: 0.75rem;
+       font-weight: bold;
+    }
+
+
+    /* Add Item Section */
+    .add-item-section {
+      padding: 1rem;
+      border-top: 1px solid #eee;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.5rem;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .search-results-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      border: 1px solid #ccc;
+      border-top: none;
+      max-height: 200px;
+      overflow-y: auto;
+      background-color: white;
+      z-index: 1000;
+      display: none;
+    }
+
+    .food-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+
+    .food-item:hover {
+      background-color: #f0f0f0;
+    }
+
+    .food-item button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: none;
+      margin-left: 5px;
+    }
+
+    .food-item:hover button {
+      display: inline-block;
+    }
+
+    /* Output & Loading */
+    #output {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      display: none;
+    }
+
+    #output.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      display: block;
+    }
+
+    #output.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      display: block;
+    }
+
+    .loading {
+      display: none;
+      margin-top: 1rem;
+      text-align: center;
+      color: #007bff;
+    }
+
+    .loading::after {
+      content: " ";
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 3px solid #ccc;
+      border-top: 3px solid #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
   <header class="header">
     <div class="logo">
-      <a href="index.html">
-        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
-      </a>
+      <a href="index.html"><img src="img/logo.png" alt="Logo Dietamigo" class="logo"></a>
     </div>
-    <button class="burger" id="burger" aria-label="Menu">
-      <i class="fas fa-bars"></i>
-    </button>
+    <button class="burger" id="burger" aria-label="Menu"><i class="fas fa-bars"></i></button>
     <nav class="menu" id="menu">
       <ul>
         <li><a href="index.html">🏠 Página Inicial</a></li>
@@ -1317,42 +1682,321 @@ export async function logout(returnTo = window.location.origin) {
         <li><a href="carreira.html">👔 Carreiras</a></li>
         <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
       </ul>
-       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+      <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
     </nav>
   </header>
-  
+
   <main class="main-container">
     <section class="section">
-      <div class="text-content">
-        <h1>Planejamento de Refeições</h1>
-        <p>Organize suas refeições semanais com base nos seus objetivos nutricionais.</p>
-        <button class="cta">Ver Calendário</button>
+      <div class="content-wrapper"> <!-- 5% padding wrapper -->
+        <h1>Seus Pratos</h1>
+        <p>Veja e edite suas refeições recentes.</p>
+
+        <div id="auth-actions">
+          <p>Você não está logado.</p>
+          <a href="login.html" class="cta-button">Ir para o Login</a>
+        </div>
+
+        <div id="gated-content" class="hidden">
+          <p>Você está logado. <button id="btn-logout">Sair</button></p>
+          <hr>
+          <div id="loading-indicator" class="loading">Carregando refeições...</div>
+          <pre id="output"></pre>
+
+          <div id="meals-container">
+            <p>Carregando refeições...</p>
+          </div>
+        </div>
       </div>
     </section>
   </main>
-  
+
   <footer class="footer">
     <div class="footer-top">
       <div class="footer-left">
-        <a href="index.html">
-          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
-        </a>
+        <a href="index.html"><img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" /></a>
         <div class="footer-socials">
           <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
           <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
-          <a href="#" aria-label="YouTube"><i class="fab fa-youtube social-icon"></i></a>
         </div>
       </div>
-      <div class="footer-links">
-        <a href="sobre.html">Sobre nós</a>
-        <a href="carreira.html">Carreiras</a>
-        <a href="#">Política de privacidade</a>
+      <div class="footer-right">
+        <ul>
+          <li><a href="index.html">🏠 Página Inicial</a></li>
+          <li><a href="login.html">🔐 Log In</a></li>
+          <li><a href="calculo.html">🥗 Dieta</a></li>
+          <li><a href="refeicao.html">🍽️ Pratos</a></li>
+          <li><a href="carreira.html">👔 Carreiras</a></li>
+          <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
+        </ul>
       </div>
     </div>
     <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
   </footer>
-  
-  <script src="script.js"></script>
+
+  <!-- Auth0 SDK -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+  <script type="module">
+    import { getAccessToken, logout } from './src/lib/authManager.js';
+    import apiClient from './src/lib/apiClient.js';
+
+    const authActionsDiv = document.getElementById('auth-actions');
+    const gatedContentDiv = document.getElementById('gated-content');
+    const logoutButton = document.getElementById('btn-logout');
+    const mealsContainer = document.getElementById('meals-container');
+    const outputDiv = document.getElementById('output');
+    const loadingIndicator = document.getElementById('loading-indicator');
+
+    function appendOutput(message, isError = false, isSuccess = false) {
+      outputDiv.textContent = message;
+      outputDiv.className = '';
+      if (isError) outputDiv.classList.add('error');
+      else if (isSuccess) outputDiv.classList.add('success');
+    }
+
+    function showLoading(show = true) {
+      loadingIndicator.style.display = show ? 'block' : 'none';
+      mealsContainer.classList.toggle('hidden', show);
+    }
+
+    function updateUI(isAuthenticated) {
+      if (isAuthenticated) {
+        authActionsDiv.classList.add('hidden');
+        gatedContentDiv.classList.remove('hidden');
+        fetchAndDisplayMeals();
+      } else {
+        authActionsDiv.classList.remove('hidden');
+        gatedContentDiv.classList.add('hidden');
+        mealsContainer.innerHTML = '<p>Você precisa estar logado para ver suas refeições.</p>';
+      }
+    }
+
+    async function fetchAndDisplayMeals() {
+      showLoading(true);
+      try {
+        const meals = await apiClient.getFoodLog();
+        displayMeals(meals);
+      } catch (error) {
+        console.error("Error fetching meals:", error);
+        appendOutput(`Erro ao carregar refeições: ${error.message || 'Erro desconhecido'}`, true);
+        mealsContainer.innerHTML = '<p>Erro ao carregar refeições. Por favor, tente novamente.</p>';
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function displayMeals(meals) {
+      mealsContainer.innerHTML = '';
+      if (!meals || meals.length === 0) {
+        mealsContainer.innerHTML = '<p>Nenhuma refeição registrada para hoje.</p>';
+        return;
+      }
+
+      meals.forEach(meal => {
+        const mealDiv = document.createElement('div');
+        mealDiv.className = 'meal-container';
+        mealDiv.dataset.mealGroupId = meal.meal_group_id;
+
+        const mealTime = new Date(meal.logged_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        mealDiv.innerHTML = `
+          <div class="meal-header">Refeição às ${mealTime}</div>
+          <table class="meal-table">
+            <thead>
+              <tr>
+                <th class="remove-cell"></th>
+                <th class="name-cell">Alimento</th>
+                <th class="weight-cell">Peso (g)</th>
+                <th class="calorie-cell">Energia (kcal)</th>
+                <th class="protein-cell">Proteína (g)</th>
+                <th class="carbs-cell">Carboidratos (g)</th>
+              </tr>
+            </thead>
+            <tbody class="meal-items"></tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="2"><strong>Total</strong></td>
+                <td class="total-weight">0g</td>
+                <td class="total-calories">0 kcal</td>
+                <td class="total-protein">0g</td>
+                <td class="total-carbs">0g</td>
+              </tr>
+            </tfoot>
+          </table>
+          <div class="add-item-section">
+            <h4>Adicionar Item à Esta Refeição</h4>
+            <div class="search-container">
+              <input type="text" class="search-input" placeholder="Pesquisar alimentos..." data-meal-group="${meal.meal_group_id}" />
+              <div class="search-results-dropdown" data-meal-group="${meal.meal_group_id}"></div>
+            </div>
+          </div>
+        `;
+
+        mealsContainer.appendChild(mealDiv);
+
+        const tbody = mealDiv.querySelector('.meal-items');
+        const totalWeight = mealDiv.querySelector('.total-weight');
+        const totalCalories = mealDiv.querySelector('.total-calories');
+        const totalProtein = mealDiv.querySelector('.total-protein');
+        const totalCarbs = mealDiv.querySelector('.total-carbs');
+
+        const updateTotals = () => {
+          let weight = 0, cal = 0, pro = 0, car = 0;
+          meal.items.forEach(item => {
+            const qty = item.weight_g;
+            weight += qty;
+            cal += (item.energy_kcal_per_100g * qty / 100);
+            pro += (item.protein_g_per_100g * qty / 100);
+            car += (item.carbs_g_per_100g * qty / 100);
+          });
+          totalWeight.textContent = `${weight.toFixed(1)}g`;
+          totalCalories.textContent = `${cal.toFixed(1)} kcal`;
+          totalProtein.textContent = `${pro.toFixed(1)}g`;
+          totalCarbs.textContent = `${car.toFixed(1)}g`;
+        };
+
+        meal.items.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.dataset.logId = item.log_id;
+          const qty = item.weight_g;
+
+          tr.innerHTML = `
+            <td class="remove-cell">
+              <button class="meal-item-remove-btn" data-log-id="${item.log_id}" aria-label="Remover">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+            <td class="name-cell">${item.food_name}</td>
+            <td class="weight-cell"><input type="number" value="${qty}" min="0.1" step="1" style="width:70px" /></td>
+            <td class="calorie-cell">${((item.energy_kcal_per_100g * qty / 100)).toFixed(1)} kcal</td>
+            <td class="protein-cell">${((item.protein_g_per_100g * qty / 100)).toFixed(1)}g</td>
+            <td class="carbs-cell">${((item.carbs_g_per_100g * qty / 100)).toFixed(1)}g</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        updateTotals();
+
+        // Update row on input change
+        tbody.addEventListener('input', (e) => {
+          const input = e.target;
+          if (input.tagName === 'INPUT') {
+            const tr = input.closest('tr');
+            const logId = tr.dataset.logId;
+            const item = meal.items.find(i => i.log_id == logId);
+            if (item && !isNaN(input.value) && input.value > 0) {
+              const qty = parseFloat(input.value);
+              item.weight_g = qty; // update local
+              tr.querySelector('.calorie-cell').textContent = `${(item.energy_kcal_per_100g * qty / 100).toFixed(1)} kcal`;
+              tr.querySelector('.protein-cell').textContent = `${(item.protein_g_per_100g * qty / 100).toFixed(1)}g`;
+              tr.querySelector('.carbs-cell').textContent = `${(item.carbs_g_per_100g * qty / 100).toFixed(1)}g`;
+              updateTotals();
+            }
+          }
+        });
+
+        // Remove item
+        tbody.addEventListener('click', async (e) => {
+          const btn = e.target.closest('.meal-item-remove-btn');
+          if (btn) {
+            const logId = btn.dataset.logId;
+            if (confirm('Tem certeza que deseja remover este item?')) {
+              try {
+                await apiClient.deleteFoodLogEntry(logId);
+                appendOutput('Item removido com sucesso!', false, true);
+                fetchAndDisplayMeals();
+              } catch (error) {
+                appendOutput(`Erro ao remover: ${error.message}`, true);
+              }
+            }
+          }
+        });
+
+        // Search & Add (scoped to meal)
+        const searchInput = mealDiv.querySelector('.search-input');
+        const resultsDiv = mealDiv.querySelector('.search-results-dropdown');
+        let timeout;
+
+        searchInput.addEventListener('input', () => {
+          clearTimeout(timeout);
+          const q = searchInput.value.trim();
+          if (q.length === 0) return resultsDiv.style.display = 'none';
+          timeout = setTimeout(async () => {
+            try {
+              const res = await apiClient.searchFoodItems(q);
+              resultsDiv.innerHTML = res.length === 0
+                ? '<div class="food-item">Nenhum encontrado.</div>'
+                : res.map(item => `
+                  <div class="food-item">
+                    <div><strong>${item.name}</strong><div>${item.energy_kcal_per_100g} kcal/100g</div></div>
+                    <button data-id="${item.id}"
+                            data-name="${item.name}"
+                            data-calories="${item.energy_kcal_per_100g}"
+                            data-protein="${item.protein_g_per_100g}"
+                            data-carbs="${item.carbs_g_per_100g}"
+                            data-meal-group="${meal.meal_group_id}">Adicionar</button>
+                  </div>
+                `).join('');
+              resultsDiv.style.display = 'block';
+            } catch (err) {
+              resultsDiv.innerHTML = `<div class="food-item error">Erro: ${err.message}</div>`;
+              resultsDiv.style.display = 'block';
+            }
+          }, 300);
+        });
+
+        resultsDiv.addEventListener('click', async (e) => {
+          const btn = e.target.closest('button');
+          if (btn && btn.textContent === 'Adicionar') {
+            const { id, name, calories, protein, carbs, mealGroup } = btn.dataset;
+            try {
+              const entry = {
+                food_item_id: id,
+                log_date: new Date().toISOString().split('T')[0],
+                weight_g: 100,
+                meal_group_id: mealGroup
+              };
+              await apiClient.addFoodLogEntry(entry);
+              appendOutput(`"${name}" adicionado!`, false, true);
+              fetchAndDisplayMeals();
+              searchInput.value = '';
+              resultsDiv.style.display = 'none';
+            } catch (err) {
+              appendOutput(`Erro ao adicionar: ${err.message}`, true);
+            }
+          }
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+            resultsDiv.style.display = 'none';
+          }
+        });
+      });
+    }
+
+    async function initializeApp() {
+      try {
+        const token = await getAccessToken();
+        if (token) {
+          apiClient.setAuthToken(token);
+          updateUI(true);
+          logoutButton.addEventListener('click', async () => {
+            await logout(window.location.origin);
+          });
+        } else {
+          updateUI(false);
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+        appendOutput(`Erro: ${error.message}. Redirecionando...`, true);
+        updateUI(false);
+        setTimeout(() => window.location.replace("/login.html"), 2000);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", initializeApp);
+  </script>
 </body>
 </html>
 
@@ -1570,6 +2214,163 @@ export async function logout(returnTo = window.location.origin) {
   </footer>
   
   <script src="script.js"></script>
+</body>
+</html>
+
+// public/calendario.html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calendário - Dietamigo</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <a href="index.html">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+      </a>
+    </div>
+    <button class="burger" id="burger" aria-label="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="index.html">🏠 Página Inicial</a></li>
+        <li><a href="login.html">🔐 Log In</a></li>
+        <li><a href="calculo.html">🥗 Dieta</a></li>
+        <li><a href="refeicao.html">🍽️ Pratos</a></li>
+        <li><a href="carreira.html">👔 Carreiras</a></li>
+        <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
+      </ul>
+      <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+    </nav>
+  </header>
+
+  <main class="main-container">
+    <section class="section">
+      <h1>Histórico de Refeições</h1>
+      <label for="data">Selecione a data:</label>
+      <input type="date" id="data" name="data"/>
+      <div id="resultado-refeicoes" class="refeicoes-lista">
+        <p>Selecione uma data para ver os pratos salvos.</p>
+      </div>
+
+      <hr />
+
+      <div id="auth-actions">
+        <p>Você não está logado.</p>
+        <a href="login.html" class="cta-button">Ir para o Login</a>
+      </div>
+
+      <div id="gated-content" class="hidden">
+        <p>Você está logado. <button id="btn-logout">Sair</button></p>
+        <button id="btn-run-tests">Atualizar Lembretes</button>
+
+        <h2>Adicionar Lembrete</h2>
+        <form id="reminder-form">
+          <label>Tipo:
+            <select name="type" required>
+              <option value="">Selecione</option>
+              <option value="one-time">Único</option>
+              <option value="recurring">Recorrente</option>
+            </select>
+          </label>
+
+          <div id="one-time-fields" class="hidden">
+            <label>Data e hora:
+              <input type="datetime-local" name="reminder_at" />
+            </label>
+          </div>
+
+          <div id="recurring-fields" class="hidden">
+            <label>Hora do dia:
+              <input type="time" name="time_of_day" />
+            </label>
+            <label>Dias da semana:
+              <select name="days_of_week" multiple>
+                <option value="MON">Segunda</option>
+                <option value="TUE">Terça</option>
+                <option value="WED">Quarta</option>
+                <option value="THU">Quinta</option>
+                <option value="FRI">Sexta</option>
+                <option value="SAT">Sábado</option>
+                <option value="SUN">Domingo</option>
+              </select>
+            </label>
+          </div>
+
+          <label>Título:
+            <input type="text" name="title" required />
+          </label>
+          <label>Descrição:
+            <textarea name="description"></textarea>
+          </label>
+          <button type="submit">Adicionar</button>
+        </form>
+
+        <div id="calendar-header"></div>
+        <div id="calendar"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="reminder-modal">
+    <div id="modal-content">
+      <span id="modal-close">&times;</span>
+      <h2 id="modal-title">Lembretes para ...</h2>
+      <ul id="modal-reminders-list"></ul>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-left">
+        <a href="index.html">
+          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
+        </a>
+        <div class="footer-socials">
+          <a href="#"><i class="fab fa-facebook-f social-icon"></i></a>
+          <a href="#"><i class="fab fa-instagram social-icon"></i></a>
+          <a href="#"><i class="fab fa-youtube social-icon"></i></a>
+        </div>
+      </div>
+      <div class="footer-links">
+        <a href="sobre.html">Sobre nós</a>
+        <a href="carreira.html">Carreiras</a>
+        <a href="#">Política de privacidade</a>
+      </div>
+    </div>
+    <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
+  </footer>
+
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+  <script type="module" src="src/lib/integracao-completa.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const resultadoDiv = document.getElementById('resultado-refeicoes');
+      const inputData = document.getElementById('data');
+
+      inputData.addEventListener('change', () => {
+        const dataSelecionada = inputData.value;
+        const registros = JSON.parse(localStorage.getItem('pratosPorData')) || {};
+
+        if (registros[dataSelecionada]) {
+          const pratos = registros[dataSelecionada];
+          resultadoDiv.innerHTML = `
+            <h2>Pratos do dia ${dataSelecionada}</h2>
+            <ul>
+              ${pratos.map(p => `<li>${p.nome} (${p.calorias} kcal)</li>`).join('')}
+            </ul>
+          `;
+        } else {
+          resultadoDiv.innerHTML = `<p>Nenhum prato registrado nesta data.</p>`;
+        }
+      });
+    });
+  </script>
 </body>
 </html>
 
@@ -2011,25 +2812,31 @@ burger.addEventListener('click', () => {
 
 const applicationModal = document.getElementById('application-modal');
 const closeButton = document.querySelector('.close-button');
-const openModalBtns = document.querySelectorAll('.open-modal-btn'); // Seleciona todos os botões "Inscrever-se"
+const openModalBtns = document.querySelectorAll('.open-modal-btn');
 const applicationForm = document.getElementById('application-form');
 const resumeUploadInput = document.getElementById('resume-upload');
 const fileNameSpan = document.getElementById('file-name');
 const uploadStatusDiv = document.getElementById('upload-status');
+const jobTitleInput = document.getElementById('job-title-input');
+const selectedJobTitleDisplay = document.getElementById('selected-job-title');
 
 // Abrir o modal
 openModalBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
-        e.preventDefault(); // Impede o comportamento padrão do link (ir para '#')
-        applicationModal.style.display = 'flex'; // Exibe o modal (usando flex para centralizar)
-        document.body.style.overflow = 'hidden'; // Impede o scroll do corpo da página
+        e.preventDefault();
+        const jobTitle = btn.dataset.jobTitle; 
+        selectedJobTitleDisplay.textContent = jobTitle;
+        jobTitleInput.value = jobTitle;
+
+        applicationModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
     });
 });
 
 // Fechar o modal
 closeButton.addEventListener('click', () => {
-    applicationModal.style.display = 'none'; // Esconde o modal
-    document.body.style.overflow = ''; // Restaura o scroll do corpo da página
+    applicationModal.style.display = 'none'; 
+    document.body.style.overflow = ''; 
     // Limpar o formulário e status ao fechar
     applicationForm.reset();
     fileNameSpan.textContent = 'Nenhum arquivo selecionado';
@@ -2048,7 +2855,7 @@ window.addEventListener('click', (e) => {
     }
 });
 
-// Atualizar o nome do arquivo selecionado
+// Atualizar nome do arquivo selecionado
 resumeUploadInput.addEventListener('change', () => {
     if (resumeUploadInput.files.length > 0) {
         fileNameSpan.textContent = resumeUploadInput.files[0].name;
@@ -2057,9 +2864,9 @@ resumeUploadInput.addEventListener('change', () => {
     }
 });
 
-// Submissão do formulário (teste)
+// Submissão do formulário
 applicationForm.addEventListener('submit', (e) => {
-    e.preventDefault(); // Impede o envio padrão do formulário
+    e.preventDefault();
 
     if (resumeUploadInput.files.length === 0) {
         uploadStatusDiv.style.color = 'red';
@@ -2074,12 +2881,9 @@ applicationForm.addEventListener('submit', (e) => {
         return;
     }
 
-    // Aqui você enviaria o arquivo para o seu backend
-    uploadStatusDiv.style.color = 'green';
-    uploadStatusDiv.textContent = `Currículo "${file.name}" enviado com sucesso (simulado)!`;
-
     const formData = new FormData();
     formData.append('resume', file);
+    formData.append('jobTitle', jobTitleInput.value);
 
     fetch('/api/upload-resume', {
         method: 'POST',
@@ -2087,7 +2891,7 @@ applicationForm.addEventListener('submit', (e) => {
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error('Erro ao enviar o arquivo.');
+            return response.json().then(err => { throw new Error(err.message || 'Erro desconhecido ao enviar o arquivo.'); });
         }
         return response.json();
     })
@@ -2095,17 +2899,13 @@ applicationForm.addEventListener('submit', (e) => {
         uploadStatusDiv.style.color = 'green';
         uploadStatusDiv.textContent = 'Currículo enviado com sucesso!';
         console.log('Upload bem-sucedido:', data);
-        // Opcional: fechar o modal após um pequeno atraso
-        setTimeout(() => {
-            closeButton.click();
-        }, 2000);
+
     })
     .catch(error => {
         uploadStatusDiv.style.color = 'red';
         uploadStatusDiv.textContent = `Erro: ${error.message}`;
         console.error('Erro no upload:', error);
     });
-
 });
 // public/calculo.html
 <!DOCTYPE html>
@@ -2115,19 +2915,191 @@ applicationForm.addEventListener('submit', (e) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Calcular Nutrientes - Dietamigo</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
-
+  <!-- Auth0 SPA SDK -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+  <style>
+    /* Basic styles to ensure the page is blank during processing */
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #f5f5f5; /* Optional subtle background */
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .processing {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #666;
+    }
+    #auth-actions, #gated-content {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+    }
+    #auth-actions {
+        background-color: #f8f9fa;
+    }
+    .cta-button {
+        display: inline-block;
+        background-color: #28a745;
+        color: white !important; /* Override default link color */
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+    }
+    .cta-button:hover {
+        background-color: #218838;
+    }
+    .hidden {
+        display: none;
+    }
+    .error {
+        color: red;
+        font-weight: bold;
+    }
+    .success {
+        color: green;
+        font-weight: bold;
+    }
+    #output {
+        margin-top: 1rem;
+        background-color: #f4f4f4;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    .food-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        border-bottom: 1px solid #eee;
+        cursor: pointer; /* Indicate it's clickable */
+    }
+    .food-item:hover {
+        background-color: #f0f0f0; /* Highlight on hover */
+    }
+    .food-item:last-child {
+        border-bottom: none;
+    }
+    .food-item button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        display: none; /* Hide button by default, show on hover/item selection */
+        flex-shrink: 0; /* Prevent button from shrinking */
+        margin-left: 5px; /* Space between text and button */
+    }
+    .food-item:hover button {
+        display: inline-block; /* Show button on hover */
+    }
+    .food-item.selected button {
+         display: inline-block; /* Always show if item is considered selected in results */
+    }
+    .selected-item {
+        display: flex;
+        flex-wrap: wrap; /* Allow wrapping on small screens */
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        border-bottom: 1px solid #eee;
+        gap: 0.5rem; /* Add space between elements */
+    }
+    .selected-item:last-child {
+        border-bottom: none;
+    }
+    .selected-item > span {
+        flex-grow: 1; /* Allow name to take available space */
+        min-width: 100px; /* Minimum width for name */
+    }
+    .selected-item .quantity-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem; /* Space between input and 'g' */
+        flex-shrink: 0; /* Prevent controls from shrinking too much */
+    }
+    .selected-item input {
+        width: 60px;
+        padding: 0.2rem;
+        margin: 0; /* Remove default margin */
+    }
+    .selected-item .calories {
+        min-width: 80px; /* Ensure consistent width for calories */
+        text-align: right; /* Align calories to the right */
+    }
+    .selected-item button {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        flex-shrink: 0; /* Prevent button from shrinking */
+    }
+    .selected-item button:hover {
+        background-color: #c82333;
+    }
+    .totals {
+        margin-top: 1rem;
+        padding: 1rem;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        font-weight: bold;
+        text-align: center; /* Center totals on mobile */
+    }
+    /* Autocomplete dropdown styling */
+    #search-results {
+        position: absolute;
+        border: 1px solid #ccc;
+        border-top: none;
+        z-index: 1000;
+        background-color: white;
+        width: calc(100% - 2rem); /* Adjust based on padding */
+        max-height: 300px;
+        overflow-y: auto;
+        display: none; /* Hidden by default */
+    }
+    #search-container {
+        position: relative; /* Needed for absolute positioning of results */
+        width: 100%;
+    }
+    /* Responsive adjustments for smaller screens */
+    @media (max-width: 768px) {
+        .selected-item {
+            flex-direction: column; /* Stack items vertically on small screens */
+            align-items: flex-start; /* Align items to the left */
+        }
+        .selected-item .quantity-controls,
+        .selected-item .calories,
+        .selected-item button {
+            align-self: flex-end; /* Align controls, calories, and button to the right */
+        }
+        .selected-item > span {
+             width: 100%; /* Full width for name on small screens */
+        }
+        .totals {
+            font-size: 0.9rem; /* Slightly smaller font for totals */
+        }
+    }
+  </style>
 </head>
 <body>
   <header class="header">
-    <div class="logo">
-      <a href="index.html">
-        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
-      </a>
-    </div>
-    <button class="burger" id="burger" aria-label="Menu">
-      <i class="fas fa-bars"></i>
-    </button>
+    <div class="logo"><a href="index.html"><img src="img/logo.png" alt="Logo Dietamigo" class="logo"></a></div>
+    <button class="burger" id="burger" aria-label="Menu"><i class="fas fa-bars"></i></button>
     <nav class="menu" id="menu">
       <ul>
         <li><a href="index.html">🏠 Página Inicial</a></li>
@@ -2137,7 +3109,7 @@ applicationForm.addEventListener('submit', (e) => {
         <li><a href="carreira.html">👔 Carreiras</a></li>
         <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
       </ul>
-       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+      <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
     </nav>
   </header>
 
@@ -2145,24 +3117,49 @@ applicationForm.addEventListener('submit', (e) => {
     <section class="section">
       <div class="text-content">
         <h1>Calculadora de Nutrientes</h1>
-        <p>Insira os ingredientes da sua refeição para obter a análise nutricional.</p>
-        <form>
-          <input type="text" placeholder="Ex: Arroz, Frango, Brócolis..." style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;" />
-          <button class="cta">Calcular</button>
-        </form>
+        <p>Pesquise ingredientes, defina quantidade e adicione ao prato.</p>
+
+        <!-- Auth UI -->
+        <div id="auth-actions">
+            <p>You are not logged in.</p>
+            <!-- Redirect button/link to login.html -->
+            <a href="login.html" class="cta-button">Go to Login</a>
+        </div>
+        <div id="gated-content" class="hidden">
+            <p>You are logged in. <button id="btn-logout">Logout</button></p>
+            <hr>
+
+            <div id="output" class="hidden"></div> <!-- Hidden by default, shown on error -->
+
+            <div id="search-container">
+              <input type="text" id="search-input" placeholder="Digite ingrediente..." style="width:100%; padding:0.5rem; margin-bottom:0;" />
+              <div id="search-results"></div> <!-- Results dropdown -->
+            </div>
+            <!-- <button id="btn-search" class="cta" style="margin-top: 0.5rem;">Buscar</button> --> <!-- Search button not needed for autocomplete -->
+
+            <div style="margin-top: 2rem;">
+              <h3>Ingredientes Selecionados:</h3>
+              <div id="selected-items" style="border: 1px solid #ccc; border-radius: 4px; padding: 0.5rem; min-height: 50px;"></div>
+              <div class="totals" id="totals">Total: 0 kcal, 0g proteína, 0g carboidrato</div>
+              <button id="btn-add-dish" class="cta" style="margin-top: 1rem; width:100%;">Adicionar Prato</button>
+            </div>
+        </div>
+      </div>
+      <div class="image-content">
+        <img src="img/hero-01.jpg" alt="Imagem Heroi" />
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <div class="footer-top">
-      <div class="footer-left">
-        <a href="index.html">
-          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
-        </a>
-        <div class="footer-socials">
+    <div class="footer-content">
+      <div class="footer-info">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
+        <p>Seu parceiro digital para uma vida mais saudável.</p>
+        <div class="social-icons">
           <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
           <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
+          <a href="#" aria-label="Twitter"><i class="fab fa-twitter social-icon"></i></a>
           <a href="#" aria-label="YouTube"><i class="fab fa-youtube social-icon"></i></a>
         </div>
       </div>
@@ -2174,8 +3171,333 @@ applicationForm.addEventListener('submit', (e) => {
     </div>
     <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
   </footer>
-  
-  <script src="script.js"></script>
+
+  <script src="script.js"></script> <!-- Assuming this handles menu/mobile -->
+
+  <!-- Your Application Script -->
+  <script type="module">
+    // Import functions from your authManager
+    import { initAuth, handleRedirectCallback, login, logout, getAccessToken } from '/src/lib/authManager.js';
+    import { ApiClient } from '/src/lib/apiClient.js';
+
+    // Create an instance of the API client
+    const apiClient = new ApiClient();
+
+    // State for selected items
+    let selected = [];
+
+    // DOM Elements
+    const authActionsDiv = document.getElementById('auth-actions');
+    const gatedContentDiv = document.getElementById('gated-content');
+    const logoutButton = document.getElementById('btn-logout');
+    const outputDiv = document.getElementById('output');
+    const searchInput = document.getElementById('search-input');
+    const searchResultsDiv = document.getElementById('search-results');
+    const selectedItemsDiv = document.getElementById('selected-items');
+    const totalsDiv = document.getElementById('totals');
+    const addDishButton = document.getElementById('btn-add-dish');
+
+    // --- Helper Functions ---
+    function updateUI(isAuthenticated) {
+        if (isAuthenticated) {
+            authActionsDiv.classList.add('hidden');
+            gatedContentDiv.classList.remove('hidden');
+        } else {
+            authActionsDiv.classList.remove('hidden');
+            gatedContentDiv.classList.add('hidden');
+        }
+    }
+
+    function appendOutput(message, isError = false, isSuccess = false) {
+        outputDiv.classList.remove('hidden');
+        const messageClass = isError ? 'error' : (isSuccess ? 'success' : '');
+        outputDiv.innerHTML += `<div class="${messageClass}">${message}</div>`;
+        outputDiv.scrollTop = outputDiv.scrollHeight; // Auto-scroll
+    }
+
+    function renderSelected() {
+        selectedItemsDiv.innerHTML = '';
+        let totalCalories = 0;
+        let totalProtein = 0;
+        let totalCarbs = 0;
+
+        selected.forEach((item, index) => {
+            // Use the correct field names from the API response
+            const itemCalories = (item.energy_kcal_per_100g * item.quantity_g) / 100;
+            const itemProtein = (item.protein_g_per_100g * item.quantity_g) / 100;
+            const itemCarbs = (item.carbs_g_per_100g * item.quantity_g) / 100;
+
+            totalCalories += itemCalories;
+            totalProtein += itemProtein;
+            totalCarbs += itemCarbs;
+
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'selected-item';
+            itemDiv.innerHTML = `
+                <span>${item.name}</span>
+                <div class="quantity-controls">
+                    <input type="number" value="${item.quantity_g}" min="1" data-index="${index}">
+                    <span>g</span>
+                </div>
+                <div class="calories">${itemCalories.toFixed(1)} kcal</div>
+                <button data-index="${index}">Remover</button>
+            `;
+            selectedItemsDiv.appendChild(itemDiv);
+        });
+
+        totalsDiv.textContent = `Total: ${totalCalories.toFixed(1)} kcal, ${totalProtein.toFixed(1)}g proteína, ${totalCarbs.toFixed(1)}g carboidrato`;
+
+        // Add event listeners for quantity changes and remove buttons
+        selectedItemsDiv.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const index = parseInt(e.target.dataset.index);
+                const newQuantity = parseFloat(e.target.value);
+                if (!isNaN(newQuantity) && newQuantity > 0) {
+                    selected[index].quantity_g = newQuantity;
+                    renderSelected(); // Re-render to update totals and calories
+                } else {
+                    e.target.value = selected[index].quantity_g; // Revert if invalid
+                }
+            });
+        });
+
+        selectedItemsDiv.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const index = parseInt(e.target.dataset.index);
+                selected.splice(index, 1);
+                renderSelected(); // Re-render the list and totals
+            });
+        });
+    }
+
+    // --- Autocomplete Search Logic ---
+    let searchTimeout = null;
+    const SEARCH_DELAY = 300; // milliseconds
+
+    async function performSearch(query) {
+        if (!query) {
+            searchResultsDiv.style.display = 'none';
+            return;
+        }
+
+        try {
+            // appendOutput(`Buscando por: "${query}"...`); // Optional: less verbose
+            const results = await apiClient.searchFoodItems(query);
+            // appendOutput(`Encontrados ${results.length} itens.`, false, true); // Optional
+
+            searchResultsDiv.innerHTML = '';
+            if (results.length === 0) {
+                searchResultsDiv.innerHTML = '<div class="food-item">Nenhum item encontrado.</div>';
+                searchResultsDiv.style.display = 'block';
+                return;
+            }
+
+            results.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'food-item';
+                // Use correct API field names and format
+                itemDiv.innerHTML = `
+                    <div>
+                        <strong>${item.name}</strong>
+                        <div>${item.energy_kcal_per_100g} kcal/100g</div>
+                    </div>
+                    <button data-id="${item.id}"
+                            data-name="${item.name}"
+                            data-calories="${item.energy_kcal_per_100g}"
+                            data-protein="${item.protein_g_per_100g}"
+                            data-carbs="${item.carbs_g_per_100g}">Adicionar</button>
+                `;
+                searchResultsDiv.appendChild(itemDiv);
+
+                // Add click listener to the entire item div for autocomplete selection
+                itemDiv.addEventListener('click', (e) => {
+                     // Check if the click was on the "Adicionar" button itself
+                     if (e.target.tagName === 'BUTTON') {
+                         // Let the button's own listener handle it
+                         return;
+                     }
+                     // Otherwise, simulate clicking the "Adicionar" button
+                     const addButton = itemDiv.querySelector('button');
+                     if (addButton) {
+                         addButton.click();
+                     }
+                 });
+            });
+
+            // Add event listeners to the new "Adicionar" buttons
+            searchResultsDiv.querySelectorAll('button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent the parent div click event
+                    const id = e.target.dataset.id;
+                    const name = e.target.dataset.name;
+                    // Parse floats for numerical values
+                    const calories = parseFloat(e.target.dataset.calories);
+                    const protein = parseFloat(e.target.dataset.protein);
+                    const carbs = parseFloat(e.target.dataset.carbs);
+
+                    // Basic check to ensure data is valid
+                    if (isNaN(calories) || isNaN(protein) || isNaN(carbs)) {
+                         appendOutput(`Erro: Dados inválidos para "${name}".`, true);
+                         return;
+                    }
+
+                    // Check if item is already selected to prevent duplicates (optional)
+                    const isAlreadySelected = selected.some(item => item.id == id);
+                    if (isAlreadySelected) {
+                        appendOutput(`"${name}" já está na lista de selecionados.`, false, true);
+                        return;
+                    }
+
+                    // Add to selected list with default 100g quantity
+                    selected.push({
+                        id: id,
+                        name: name,
+                        energy_kcal_per_100g: calories,
+                        protein_g_per_100g: protein,
+                        carbs_g_per_100g: carbs,
+                        quantity_g: 100
+                    });
+
+                    renderSelected();
+                    appendOutput(`"${name}" adicionado à lista.`, false, true);
+                    searchInput.value = ''; // Clear search input
+                    searchResultsDiv.style.display = 'none'; // Hide dropdown
+                });
+            });
+
+            searchResultsDiv.style.display = 'block'; // Show the dropdown
+
+        } catch (error) {
+            console.error("Search error:", error);
+            appendOutput(`Erro na busca: ${error.message}`, true);
+            searchResultsDiv.innerHTML = `<div class="food-item error">Erro na busca: ${error.message}</div>`;
+            searchResultsDiv.style.display = 'block';
+        }
+    }
+
+    // Debounced search input handler
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        const query = searchInput.value.trim();
+        if (query.length === 0) {
+            searchResultsDiv.style.display = 'none';
+            return;
+        }
+        searchTimeout = setTimeout(() => {
+            performSearch(query);
+        }, SEARCH_DELAY);
+    });
+
+    // Optional: Hide dropdown if user clicks outside
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !searchResultsDiv.contains(e.target)) {
+            searchResultsDiv.style.display = 'none';
+        }
+    });
+
+
+    // --- Auth and API Logic ---
+    async function initializeApp() {
+        try {
+            const token = await getAccessToken();
+            if (token) {
+                console.log("Ready to make authenticated API calls.");
+                apiClient.setAuthToken(token);
+                updateUI(true);
+
+                // --- Event Listeners ---
+                logoutButton.addEventListener('click', async () => {
+                    try {
+                        await logout(window.location.origin);
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                        appendOutput(`Logout Error: ${error.message}`, true);
+                    }
+                });
+
+                // The search button is no longer the primary trigger
+                // searchButton.addEventListener('click', async () => { ... });
+
+                addDishButton.addEventListener('click', async () => {
+                    if (selected.length === 0) {
+                         appendOutput('Nenhum ingrediente selecionado para adicionar ao prato.', true);
+                         return;
+                     }
+
+                     try {
+                         // Example: Add items to "Lunch" meal of today's log
+                         const today = new Date().toISOString().split('T')[0];
+                         let addedCount = 0;
+                         let mealGroupId = null; // To group items into a single meal
+
+                         appendOutput(`Adicionando ${selected.length} item(s) ao prato...`);
+
+                         // Loop through selected items and add them
+                         for (let i = 0; i < selected.length; i++) {
+                             const item = selected[i];
+                             const entryData = {
+                                 food_item_id: item.id,
+                                 // Use log_date as expected by the backend
+                                 log_date: today,
+                                 // Use weight_g as expected by the backend
+                                 weight_g: item.quantity_g,
+                                 // meal: 'Lunch' // Backend API doesn't seem to use 'meal' directly in POST /food-log
+                                 // If meal grouping is needed, we handle it via meal_group_id
+                             };
+
+                             // If we have a meal_group_id from a previous item, add it to the data
+                             if (mealGroupId) {
+                                 entryData.meal_group_id = mealGroupId;
+                             }
+
+                             const result = await apiClient.addFoodLogEntry(entryData);
+
+                             // If this was the first item and we didn't have a meal_group_id,
+                             // capture the one generated by the backend
+                             if (!mealGroupId && result && result.meal_group_id) {
+                                 mealGroupId = result.meal_group_id;
+                             }
+
+                             addedCount++;
+                         }
+
+                         appendOutput(`${addedCount} item(s) adicionado(s) com sucesso ao prato!`, false, true);
+
+                         // Clear selection after adding (optional)
+                         selected = [];
+                         renderSelected();
+
+                     } catch (error) {
+                         console.error("Error adding dish items:", error);
+                         // Improved error message to reflect the actual field names the API expects
+                         if (error.message && error.message.includes("food_item_id, log_date, and a positive weight_g")) {
+                             appendOutput(`Erro ao adicionar item(s) ao prato: Verifique se todos os ingredientes têm ID válido e quantidade positiva.`, true);
+                         } else {
+                             appendOutput(`Erro ao adicionar item(s) ao prato: ${error.message}`, true);
+                         }
+                     }
+                });
+
+
+            } else {
+                console.log("Redirecting to login...");
+                updateUI(false);
+            }
+        } catch (error) {
+            console.error("Unexpected error during setup:", error);
+            appendOutput(`Authentication Error: ${error.message || 'Unknown error'}. Redirecting...`, true);
+            updateUI(false);
+            setTimeout(() => {
+                window.location.replace("/login.html");
+            }, 2000);
+        }
+    }
+
+    // --- Initialize on DOM Load ---
+    document.addEventListener("DOMContentLoaded", () => {
+        initializeApp();
+    });
+  </script>
 </body>
 </html>
 
@@ -2235,25 +3557,25 @@ applicationForm.addEventListener('submit', (e) => {
           <div class="content-area">
             <h3>Nutricionista</h3>
           </div>
-          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+          <a href="#" class="cta small open-modal-btn" data-job-title="Nutricionista">Inscrever-se</a>
         </div>
         <div class="job-card">
           <div class="content-area">
             <h3>Analista de Marketing</h3>
           </div>
-          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+          <a href="#" class="cta small open-modal-btn" data-job-title="Analista de Marketing">Inscrever-se</a>
         </div>
         <div class="job-card">
           <div class="content-area">
             <h3>Analista de Testes (QA)</h3>
           </div>
-          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+          <a href="#" class="cta small open-modal-btn" data-job-title="Analista de Testes">Inscrever-se</a>
         </div>
         <div class="job-card">
           <div class="content-area">
             <h3>Desenvolvedor(a) Front-End</h3>
           </div>
-          <a href="#" class="cta small open-modal-btn">Inscrever-se</a>
+          <a href="#" class="cta small open-modal-btn" data-job-title="Front-End">Inscrever-se</a>
         </div>
       </div>
     </div>
@@ -2282,23 +3604,23 @@ applicationForm.addEventListener('submit', (e) => {
   </footer>
   
   <div id="application-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2>Enviar Currículo</h2>
-            <p>Selecione seu currículo em formato PDF para se candidatar à vaga.</p>
-            <form id="application-form">
-                <div class="file-upload-wrapper">
-                    <input type="file" id="resume-upload" accept=".pdf" required>
-                    <label for="resume-upload" class="custom-file-upload">
-                        <i class="fas fa-cloud-upload-alt"></i> Escolher Arquivo PDF
-                    </label>
-                    <span id="file-name" class="file-name">Nenhum arquivo selecionado</span>
-                </div>
-                <button type="submit" class="cta">Enviar Candidatura</button>
-            </form>
-            <div id="upload-status" style="margin-top: 15px; color: green; font-weight: bold;"></div>
-        </div>
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Faça sua candidatura</h2>
+        <p>Você está se candidatando para a vaga de: <strong id="selected-job-title"></strong></p> <p>Selecione seu currículo em formato PDF para se candidatar à vaga.</p>
+        <form id="application-form">
+            <input type="hidden" id="job-title-input" name="jobTitle"> <div class="file-upload-wrapper">
+                <input type="file" id="resume-upload" accept=".pdf" required>
+                <label for="resume-upload" class="custom-file-upload">
+                    <i class="fas fa-cloud-upload-alt"></i> Escolher Arquivo PDF
+                </label>
+                <span id="file-name" class="file-name">Nenhum arquivo selecionado</span>
+            </div>
+            <button type="submit" class="cta">Enviar Candidatura</button>
+        </form>
+        <div id="upload-status" style="margin-top: 15px; color: green; font-weight: bold;"></div>
     </div>
+  </div>
   
   <script src="script.js"></script>
 </body>

@@ -3,21 +3,298 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Planejamento - Dietamigo</title>
+  <title>Pratos - Dietamigo</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    /* --- Global Layout: 5% padding on sides, max width for meals --- */
+    .content-wrapper {
+      padding-left: 5%;
+      padding-right: 5%;
+    }
+    .meal-container {
+      margin: 0 auto 2rem auto; /* Center the container */
+      max-width: 960px; /* Approximate width for 120 chars */
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    .meal-header {
+      font-weight: bold;
+      color: #333;
+      padding: 1rem;
+      border-bottom: 1px solid #eee;
+    }
+    /* --- Table Styling for Alignment --- */
+    .meal-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed; /* Ensures consistent column widths */
+    }
+    .meal-table th,
+    .meal-table td {
+      padding: 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    .meal-table th {
+      background-color: #f5f5f5;
+      font-weight: bold;
+      color: #555;
+    }
+    .meal-table .remove-cell {
+      width: 60px;
+      text-align: center;
+    }
+    .meal-table .name-cell {
+      width: 40%;
+    }
+    .meal-table .weight-cell,
+    .meal-table .calorie-cell,
+    .meal-table .protein-cell,
+    .meal-table .carbs-cell {
+      width: 15%;
+    }
+    /* Remove button */
+    .meal-item-remove-btn {
+      background: none;
+      border: none;
+      color: #dc3545;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0.25rem;
+      border-radius: 4px;
+    }
+    .meal-item-remove-btn:hover {
+      color: #c82333;
+      background-color: #f8f9fa;
+    }
+    /* Total Row Separator */
+    .meal-table tfoot tr td {
+       border-top: 2px solid #ccc; /* Add the line above the total row */
+       padding-top: 0.75rem;
+       font-weight: bold;
+    }
+    /* Add Item Section */
+    .add-item-section {
+      padding: 1rem;
+      border-top: 1px solid #eee;
+    }
+    .search-input {
+      width: 100%;
+      padding: 0.5rem;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .search-container {
+      position: relative; /* Establish a positioning context for the dropdown */
+      width: 100%;        /* Ensure it takes full width if needed */
+    }
+    .search-results-dropdown {
+      position: absolute;
+      top: 100%;          /* Position it right below the input */
+      left: 0;
+      right: 0;
+      /* width: 100%; */     /* Uncomment if you want it to explicitly match the container width */
+      border: 1px solid #ccc;
+      border-top: none;
+      max-height: 200px;
+      overflow-y: auto;
+      background-color: white;
+      z-index: 1000;
+      display: none;
+      /* Remove the absolute positioning from the wider content-wrapper if it was causing issues */
+      /* Ensure the meal-container or add-item-section allows overflow if needed */
+    }
+    .food-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+    .food-item:hover {
+      background-color: #f0f0f0;
+    }
+    .food-item button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: none;
+      margin-left: 5px;
+    }
+    .food-item:hover button {
+      display: inline-block;
+    }
+    /* Output & Loading */
+    #output {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      display: none;
+    }
+    #output.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      display: block;
+    }
+    #output.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      display: block;
+    }
+    .loading {
+      display: none;
+      margin-top: 1rem;
+      text-align: center;
+      color: #007bff;
+    }
+    .loading::after {
+      content: " ";
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 3px solid #ccc;
+      border-top: 3px solid #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .hidden {
+      display: none !important;
+    }
 
+    /* --- New Styles for Date Filter and Pagination --- */
+    .filter-section {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #f8f9fa;
+    }
+    .filter-section h3 {
+        margin-top: 0;
+    }
+    .date-filter-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: end;
+    }
+    .date-filter-form > div {
+        display: flex;
+        flex-direction: column;
+    }
+    .date-filter-form label {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    .date-filter-form input[type="date"] {
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: fit-content; /* Or set a specific width */
+    }
+    .date-filter-form button {
+        padding: 0.5rem 1rem;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        height: fit-content; /* Align with inputs */
+    }
+    .date-filter-form button:hover {
+        background-color: #0056b3;
+    }
+    .date-filter-form button[type="reset"] {
+         background-color: #6c757d;
+    }
+    .date-filter-form button[type="reset"]:hover {
+         background-color: #5a6268;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+    .pagination button {
+        padding: 0.5rem 0.75rem;
+        background-color: #e9ecef;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .pagination button:hover:not(:disabled) {
+        background-color: #dee2e6;
+    }
+    .pagination button:disabled {
+        background-color: #f8f9fa;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    .pagination span {
+        padding: 0.5rem;
+    }
+    .pagination-info {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .pagination .current-page {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+    .pagination .current-page:hover {
+        background-color: #0069d9; /* Slightly darker on hover */
+        border-color: #0062cc;
+    }
+
+    .no-meals-message {
+        text-align: center;
+        padding: 2rem;
+        color: #6c757d;
+        font-style: italic;
+    }
+    .date-group-header {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #007bff;
+    }
+    .date-group-header h2 {
+        margin: 0;
+        color: #343a40;
+    }
+    /* --- End New Styles --- */
+  </style>
 </head>
 <body>
   <header class="header">
     <div class="logo">
-      <a href="index.html">
-        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
-      </a>
+      <a href="index.html"><img src="img/logo.png" alt="Logo Dietamigo" class="logo"></a>
     </div>
-    <button class="burger" id="burger" aria-label="Menu">
-      <i class="fas fa-bars"></i>
-    </button>
+    <button class="burger" id="burger" aria-label="Menu"><i class="fas fa-bars"></i></button>
     <nav class="menu" id="menu">
       <ul>
         <li><a href="index.html">🏠 Página Inicial</a></li>
@@ -27,41 +304,485 @@
         <li><a href="carreira.html">👔 Carreiras</a></li>
         <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
       </ul>
-       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+      <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
     </nav>
   </header>
-  
   <main class="main-container">
     <section class="section">
-      <div class="text-content">
-        <h1>Planejamento de Refeições</h1>
-        <p>Organize suas refeições semanais com base nos seus objetivos nutricionais.</p>
-        <button class="cta">Ver Calendário</button>
+      <div class="content-wrapper"> <!-- 5% padding wrapper -->
+        <h1>Seus Pratos</h1>
+        <p>Veja e edite suas refeições recentes.</p>
+        
+        <div id="auth-actions">
+          <p>Você não está logado.</p>
+          <a href="login.html" class="cta-button">Ir para o Login</a>
+        </div>
+        
+        <div id="gated-content" class="hidden">
+          <p>Você está logado. <button id="btn-logout">Sair</button></p>
+          <hr>
+          
+          <!-- Date Filter Section -->
+          <div class="filter-section">
+            <h3>Filtrar por Data</h3>
+            <form id="date-filter-form" class="date-filter-form">
+                <div>
+                    <label for="filter-date">Data:</label>
+                    <input type="date" id="filter-date" name="date">
+                </div>
+                <button type="submit">Filtrar</button>
+                <button type="reset">Limpar</button>
+            </form>
+          </div>
+          
+          <div id="loading-indicator" class="loading">Carregando refeições...</div>
+          <pre id="output"></pre>
+          
+          <div id="meals-container">
+            <p>Carregando refeições...</p>
+          </div>
+          
+          <!-- Pagination Controls -->
+          <div id="pagination-controls" class="pagination hidden">
+            <button id="prev-page" aria-label="Página Anterior">Anterior</button>
+            <span id="page-info" class="pagination-info">Página <span id="current-page-num">1</span> de <span id="total-pages-num">1</span></span>
+            <button id="next-page" aria-label="Próxima Página">Próxima</button>
+            <span class="pagination-info">Itens por página: 50</span>
+          </div>
+          
+        </div>
       </div>
     </section>
   </main>
-  
   <footer class="footer">
     <div class="footer-top">
       <div class="footer-left">
-        <a href="index.html">
-          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
-        </a>
+        <a href="index.html"><img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" /></a>
         <div class="footer-socials">
           <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
           <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
-          <a href="#" aria-label="YouTube"><i class="fab fa-youtube social-icon"></i></a>
         </div>
       </div>
-      <div class="footer-links">
-        <a href="sobre.html">Sobre nós</a>
-        <a href="carreira.html">Carreiras</a>
-        <a href="#">Política de privacidade</a>
+      <div class="footer-right">
+        <ul>
+          <li><a href="index.html">🏠 Página Inicial</a></li>
+          <li><a href="login.html">🔐 Log In</a></li>
+          <li><a href="calculo.html">🥗 Dieta</a></li>
+          <li><a href="refeicao.html">🍽️ Pratos</a></li>
+          <li><a href="carreira.html">👔 Carreiras</a></li>
+          <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
+        </ul>
       </div>
     </div>
     <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
   </footer>
-  
-  <script src="script.js"></script>
+  <!-- Auth0 SDK -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+  <script type="module">
+    import { getAccessToken, logout } from './src/lib/authManager.js';
+    import apiClient from './src/lib/apiClient.js';
+    
+    const authActionsDiv = document.getElementById('auth-actions');
+    const gatedContentDiv = document.getElementById('gated-content');
+    const logoutButton = document.getElementById('btn-logout');
+    const mealsContainer = document.getElementById('meals-container');
+    const outputDiv = document.getElementById('output');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    
+    // --- New Elements for Date Filter and Pagination ---
+    const dateFilterForm = document.getElementById('date-filter-form');
+    const filterDateInput = document.getElementById('filter-date');
+    const paginationControls = document.getElementById('pagination-controls');
+    const prevPageButton = document.getElementById('prev-page');
+    const nextPageButton = document.getElementById('next-page');
+    const currentPageSpan = document.getElementById('current-page-num');
+    const totalPagesSpan = document.getElementById('total-pages-num');
+
+    // --- State Management ---
+    let currentQueryParams = {
+        date: null, // null means no date filter (full search)
+        page: 1,
+        limit: 50,
+        offset: 0
+    };
+
+    function appendOutput(message, isError = false, isSuccess = false) {
+      outputDiv.textContent = message;
+      outputDiv.className = '';
+      if (isError) outputDiv.classList.add('error');
+      else if (isSuccess) outputDiv.classList.add('success');
+    }
+    
+    function showLoading(show = true) {
+      loadingIndicator.style.display = show ? 'block' : 'none';
+      mealsContainer.classList.toggle('hidden', show);
+      paginationControls.classList.add('hidden'); // Hide pagination while loading
+    }
+    
+    function updateUI(isAuthenticated) {
+      if (isAuthenticated) {
+        authActionsDiv.classList.add('hidden');
+        gatedContentDiv.classList.remove('hidden');
+        
+        // --- Initialize Date Filter from URL ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const dateFromUrl = urlParams.get('date');
+        if (dateFromUrl) {
+            filterDateInput.value = dateFromUrl;
+            currentQueryParams.date = dateFromUrl;
+        }
+        
+        fetchAndDisplayMeals();
+      } else {
+        authActionsDiv.classList.remove('hidden');
+        gatedContentDiv.classList.add('hidden');
+        mealsContainer.innerHTML = '<p>Você precisa estar logado para ver suas refeições.</p>';
+      }
+    }
+    
+    // --- Function to update URL without reloading the page ---
+    function updateUrl(params) {
+        const newUrl = new URL(window.location);
+        newUrl.search = ''; // Clear existing params
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+                newUrl.searchParams.set(key, value);
+            }
+        });
+        window.history.replaceState({}, '', newUrl);
+    }
+
+    async function fetchAndDisplayMeals() {
+      showLoading(true);
+      try {
+        // Update the API call to use limit and offset for pagination
+        const mealsData = await apiClient.getFoodLog(
+            currentQueryParams.date, 
+            currentQueryParams.limit, 
+            currentQueryParams.offset
+        );
+        
+        // Assume the API now returns an object with { meals: [...], total: N }
+        // If it's still just an array, we'll need to handle that differently for pagination info
+        // For now, let's assume it's an object with meals and total
+        const meals = mealsData.meals || mealsData; // Fallback if it's still an array
+        const totalMeals = mealsData.total || meals.length; // Fallback if total is not provided
+
+        displayMeals(meals, totalMeals);
+      } catch (error) {
+        console.error("Error fetching meals:", error);
+        appendOutput(`Erro ao carregar refeições: ${error.message || 'Erro desconhecido'}`, true);
+        mealsContainer.innerHTML = '<p>Erro ao carregar refeições. Por favor, tente novamente.</p>';
+        paginationControls.classList.add('hidden'); // Hide pagination on error
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // --- Updated displayMeals to handle grouping by date ---
+    function displayMeals(meals, totalMeals) {
+        mealsContainer.innerHTML = '';
+        
+        // Calculate pagination info
+        const totalPages = Math.ceil(totalMeals / currentQueryParams.limit);
+        currentPageSpan.textContent = currentQueryParams.page;
+        totalPagesSpan.textContent = totalPages > 0 ? totalPages : 1;
+
+        // Show/hide pagination controls
+        if (totalPages > 1) {
+            paginationControls.classList.remove('hidden');
+            prevPageButton.disabled = currentQueryParams.page <= 1;
+            nextPageButton.disabled = currentQueryParams.page >= totalPages;
+        } else {
+            paginationControls.classList.add('hidden');
+        }
+
+        if (!meals || meals.length === 0) {
+            mealsContainer.innerHTML = '<p class="no-meals-message">Nenhuma refeição encontrada para os critérios selecionados.</p>';
+            return;
+        }
+
+        // Group meals by date
+        const mealsByDate = {};
+        meals.forEach(meal => {
+            const mealDate = new Date(meal.logged_at).toISOString().split('T')[0]; // YYYY-MM-DD
+            if (!mealsByDate[mealDate]) {
+                mealsByDate[mealDate] = [];
+            }
+            mealsByDate[mealDate].push(meal);
+        });
+
+        // Display meals grouped by date
+        Object.keys(mealsByDate).sort().reverse().forEach(dateStr => {
+            const mealsForDate = mealsByDate[dateStr];
+            const dateHeader = document.createElement('div');
+            dateHeader.className = 'date-group-header';
+            const formattedDate = new Date(dateStr).toLocaleDateString('pt-BR');
+            dateHeader.innerHTML = `<h2>${formattedDate}</h2>`;
+            mealsContainer.appendChild(dateHeader);
+
+            mealsForDate.forEach(meal => {
+                const mealDiv = document.createElement('div');
+                mealDiv.className = 'meal-container';
+                mealDiv.dataset.mealGroupId = meal.meal_group_id;
+                const mealTime = new Date(meal.logged_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                mealDiv.innerHTML = `
+                  <div class="meal-header">Refeição às ${mealTime}</div>
+                  <table class="meal-table">
+                    <thead>
+                      <tr>
+                        <th class="remove-cell"></th>
+                        <th class="name-cell">Alimento</th>
+                        <th class="weight-cell">Peso (g)</th>
+                        <th class="calorie-cell">Energia (kcal)</th>
+                        <th class="protein-cell">Proteína (g)</th>
+                        <th class="carbs-cell">Carboidratos (g)</th>
+                      </tr>
+                    </thead>
+                    <tbody class="meal-items"></tbody>
+                    <tfoot>
+                      <tr class="total-row">
+                        <td colspan="2"><strong>Total</strong></td>
+                        <td class="total-weight">0g</td>
+                        <td class="total-calories">0 kcal</td>
+                        <td class="total-protein">0g</td>
+                        <td class="total-carbs">0g</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                  <div class="add-item-section">
+                    <h4>Adicionar Item à Esta Refeição</h4>
+                    <div class="search-container">
+                      <input type="text" class="search-input" placeholder="Pesquisar alimentos..." data-meal-group="${meal.meal_group_id}" />
+                      <div class="search-results-dropdown" data-meal-group="${meal.meal_group_id}"></div>
+                    </div>
+                  </div>
+                `;
+                mealsContainer.appendChild(mealDiv);
+                const tbody = mealDiv.querySelector('.meal-items');
+                const totalWeight = mealDiv.querySelector('.total-weight');
+                const totalCalories = mealDiv.querySelector('.total-calories');
+                const totalProtein = mealDiv.querySelector('.total-protein');
+                const totalCarbs = mealDiv.querySelector('.total-carbs');
+                const updateTotals = () => {
+                  let weight = 0, cal = 0, pro = 0, car = 0;
+                  meal.items.forEach(item => {
+                    const qty = item.weight_g;
+                    weight += qty;
+                    cal += (item.energy_kcal_per_100g * qty / 100);
+                    pro += (item.protein_g_per_100g * qty / 100);
+                    car += (item.carbs_g_per_100g * qty / 100);
+                  });
+                  totalWeight.textContent = `${weight.toFixed(1)}g`;
+                  totalCalories.textContent = `${cal.toFixed(1)} kcal`;
+                  totalProtein.textContent = `${pro.toFixed(1)}g`;
+                  totalCarbs.textContent = `${car.toFixed(1)}g`;
+                };
+                meal.items.forEach(item => {
+                  const tr = document.createElement('tr');
+                  tr.dataset.logId = item.log_id;
+                  const qty = item.weight_g;
+                  tr.innerHTML = `
+                    <td class="remove-cell">
+                      <button class="meal-item-remove-btn" data-log-id="${item.log_id}" aria-label="Remover">
+                        <i class="fas fa-trash-alt"></i>
+                      </button>
+                    </td>
+                    <td class="name-cell">${item.food_name}</td>
+                    <td class="weight-cell"><input type="number" value="${qty}" min="0.1" step="1" style="width:70px" /></td>
+                    <td class="calorie-cell">${((item.energy_kcal_per_100g * qty / 100)).toFixed(1)} kcal</td>
+                    <td class="protein-cell">${((item.protein_g_per_100g * qty / 100)).toFixed(1)}g</td>
+                    <td class="carbs-cell">${((item.carbs_g_per_100g * qty / 100)).toFixed(1)}g</td>
+                  `;
+                  tbody.appendChild(tr);
+                });
+                updateTotals();
+                // --- Weight Update Logic (with 5s debounce) ---
+                const updateWeightOnServer = async (logId, newWeight, itemObject) => {
+                  try {
+                    itemObject.weight_g = newWeight;
+                    const correspondingRow = tbody.querySelector(`tr[data-log-id="${logId}"]`);
+                    if (correspondingRow) {
+                      correspondingRow.querySelector('.calorie-cell').textContent = `${(itemObject.energy_kcal_per_100g * newWeight / 100).toFixed(1)} kcal`;
+                      correspondingRow.querySelector('.protein-cell').textContent = `${(itemObject.protein_g_per_100g * newWeight / 100).toFixed(1)}g`;
+                      correspondingRow.querySelector('.carbs-cell').textContent = `${(itemObject.carbs_g_per_100g * newWeight / 100).toFixed(1)}g`;
+                    }
+                    updateTotals();
+                    await apiClient.updateFoodLogEntry(logId, { weight_g: newWeight });
+                  } catch (error) {
+                    console.error("Error updating weight:", error);
+                    appendOutput(`Erro ao atualizar peso: ${error.message || 'Erro desconhecido'}`, true);
+                  }
+                };
+                const weightUpdateTimers = {};
+                tbody.addEventListener('input', (e) => {
+                  const input = e.target;
+                  if (input.tagName === 'INPUT' && input.type === 'number') {
+                    const tr = input.closest('tr');
+                    const logId = tr.dataset.logId;
+                    const newValue = parseFloat(input.value);
+                    if (isNaN(newValue) || newValue <= 0) {
+                      return;
+                    }
+                    const item = meal.items.find(i => i.log_id == logId);
+                    if (item) {
+                        if (weightUpdateTimers[logId]) {
+                            clearTimeout(weightUpdateTimers[logId]);
+                        }
+                        weightUpdateTimers[logId] = setTimeout(() => {
+                            updateWeightOnServer(logId, newValue, item);
+                            delete weightUpdateTimers[logId];
+                        }, 5000);
+                        item._temp_weight_g = newValue;
+                        tr.querySelector('.calorie-cell').textContent = `${(item.energy_kcal_per_100g * newValue / 100).toFixed(1)} kcal`;
+                        tr.querySelector('.protein-cell').textContent = `${(item.protein_g_per_100g * newValue / 100).toFixed(1)}g`;
+                        tr.querySelector('.carbs-cell').textContent = `${(item.carbs_g_per_100g * newValue / 100).toFixed(1)}g`;
+                        updateTotals();
+                    }
+                  }
+                });
+                // Remove item
+                tbody.addEventListener('click', async (e) => {
+                  const btn = e.target.closest('.meal-item-remove-btn');
+                  if (btn) {
+                    const logId = btn.dataset.logId;
+                    if (confirm('Tem certeza que deseja remover este item?')) {
+                      try {
+                        await apiClient.deleteFoodLogEntry(logId);
+                        appendOutput('Item removido com sucesso!', false, true);
+                        fetchAndDisplayMeals(); // Refresh the list
+                      } catch (error) {
+                        appendOutput(`Erro ao remover: ${error.message}`, true);
+                      }
+                    }
+                  }
+                });
+                // Search & Add (scoped to meal)
+                const searchInput = mealDiv.querySelector('.search-input');
+                const resultsDiv = mealDiv.querySelector('.search-results-dropdown');
+                let timeout;
+                searchInput.addEventListener('input', () => {
+                  clearTimeout(timeout);
+                  const q = searchInput.value.trim();
+                  if (q.length === 0) return resultsDiv.style.display = 'none';
+                  timeout = setTimeout(async () => {
+                    try {
+                      const res = await apiClient.searchFoodItems(q);
+                      resultsDiv.innerHTML = res.length === 0
+                        ? '<div class="food-item">Nenhum encontrado.</div>'
+                        : res.map(item => `
+                          <div class="food-item">
+                            <div><strong>${item.name}</strong><div>${item.energy_kcal_per_100g} kcal/100g</div></div>
+                            <button data-id="${item.id}"
+                                    data-name="${item.name}"
+                                    data-calories="${item.energy_kcal_per_100g}"
+                                    data-protein="${item.protein_g_per_100g}"
+                                    data-carbs="${item.carbs_g_per_100g}"
+                                    data-meal-group="${meal.meal_group_id}">Adicionar</button>
+                          </div>
+                        `).join('');
+                      resultsDiv.style.display = 'block';
+                    } catch (err) {
+                      resultsDiv.innerHTML = `<div class="food-item error">Erro: ${err.message}</div>`;
+                      resultsDiv.style.display = 'block';
+                    }
+                  }, 300);
+                });
+                resultsDiv.addEventListener('click', async (e) => {
+                  const btn = e.target.closest('button');
+                  if (btn && btn.textContent === 'Adicionar') {
+                    const { id, name, calories, protein, carbs, mealGroup } = btn.dataset;
+                    try {
+                      const entry = {
+                        food_item_id: id,
+                        log_date: new Date().toISOString().split('T')[0],
+                        weight_g: 100,
+                        meal_group_id: mealGroup
+                      };
+                      await apiClient.addFoodLogEntry(entry);
+                      appendOutput(`"${name}" adicionado!`, false, true);
+                      fetchAndDisplayMeals(); // Refresh the list
+                      searchInput.value = '';
+                      resultsDiv.style.display = 'none';
+                    } catch (err) {
+                      appendOutput(`Erro ao adicionar: ${err.message}`, true);
+                    }
+                  }
+                });
+                document.addEventListener('click', (e) => {
+                  if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+                    resultsDiv.style.display = 'none';
+                  }
+                });
+            });
+        });
+    }
+
+    // --- Event Listeners for Pagination ---
+    prevPageButton.addEventListener('click', () => {
+        if (currentQueryParams.page > 1) {
+            currentQueryParams.page--;
+            currentQueryParams.offset = (currentQueryParams.page - 1) * currentQueryParams.limit;
+            updateUrl({ date: currentQueryParams.date, page: currentQueryParams.page });
+            fetchAndDisplayMeals();
+        }
+    });
+
+    nextPageButton.addEventListener('click', () => {
+        // We assume total count is known or we check if we got < 50 items
+        currentQueryParams.page++;
+        currentQueryParams.offset = (currentQueryParams.page - 1) * currentQueryParams.limit;
+        updateUrl({ date: currentQueryParams.date, page: currentQueryParams.page });
+        fetchAndDisplayMeals();
+    });
+
+    // --- Event Listener for Date Filter Form ---
+    dateFilterForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(dateFilterForm);
+        const selectedDate = formData.get('date');
+        
+        // Reset to page 1 when applying a new filter
+        currentQueryParams.date = selectedDate || null; // null for full search
+        currentQueryParams.page = 1;
+        currentQueryParams.offset = 0;
+        
+        updateUrl({ date: currentQueryParams.date }); // Update URL, remove page param if not needed
+        fetchAndDisplayMeals();
+    });
+
+    // Optional: Reset button clears the filter and URL
+    dateFilterForm.addEventListener('reset', () => {
+        filterDateInput.value = '';
+        currentQueryParams.date = null;
+        currentQueryParams.page = 1;
+        currentQueryParams.offset = 0;
+        // Update URL to remove date and page params
+        window.history.replaceState({}, '', window.location.pathname);
+        fetchAndDisplayMeals();
+    });
+
+
+    async function initializeApp() {
+      try {
+        const token = await getAccessToken();
+        if (token) {
+          apiClient.setAuthToken(token);
+          updateUI(true);
+          logoutButton.addEventListener('click', async () => {
+            await logout(window.location.origin);
+          });
+        } else {
+          updateUI(false);
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+        appendOutput(`Erro: ${error.message}. Redirecionando...`, true);
+        updateUI(false);
+        setTimeout(() => window.location.replace("/login.html"), 2000);
+      }
+    }
+    document.addEventListener("DOMContentLoaded", initializeApp);
+  </script>
 </body>
 </html>

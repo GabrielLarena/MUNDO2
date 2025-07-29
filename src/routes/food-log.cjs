@@ -4,15 +4,29 @@ const { db } = require('../db/database.cjs');
 const router = express.Router();
 
 /**
- * GET /api/food-log?date=YYYY-MM-DD
- * Gets the food log for a specific date, grouped into "meals" by meal_group_id.
- * Defaults to today's date if 'date' query param is not provided.
- * Returns: [{ meal_group_id: "...", logged_at: "...", items: [{...}, {...}] }, {...}]
+ * GET /api/food-log
+ * Optional query params:
+ *   - date (YYYY-MM-DD): filter logs by a specific date
+ *   - limit (number): limit number of results
+ *   - offset (number): offset for pagination
+ *
+ * Returns:
+ * [
+ *   {
+ *     meal_group_id: "...",
+ *     logged_at: "...",
+ *     items: [{...}, {...}]
+ *   },
+ *   ...
+ * ]
  */
 router.get('/', (req, res) => {
     const userId = req.auth.payload.sub;
-    const date = req.query.date || new Date().toISOString().split('T')[0];
-    const stmt = db.prepare(`
+
+    const { date, limit, offset } = req.query;
+
+    // Build dynamic query
+    let sql = `
         SELECT
             l.id AS log_id,
             l.user_id,
@@ -27,12 +41,33 @@ router.get('/', (req, res) => {
             f.carbs_g_per_100g
         FROM daily_food_log l
         JOIN food_items f ON l.food_item_id = f.id
-        WHERE l.user_id = ? AND l.log_date = ?
-        ORDER BY l.meal_group_id ASC, l.logged_at ASC
-    `);
+        WHERE l.user_id = ?
+    `;
+    const params = [userId];
+
+    // Apply date filter if provided
+    if (date) {
+        sql += ` AND l.log_date = ?`;
+        params.push(date);
+    }
+
+    // Always order by meal group and logged time
+    sql += ` ORDER BY l.meal_group_id ASC, l.logged_at ASC`;
+
+    // Apply limit and offset if provided
+    if (limit) {
+        sql += ` LIMIT ?`;
+        params.push(parseInt(limit));
+    }
+    if (offset) {
+        sql += ` OFFSET ?`;
+        params.push(parseInt(offset));
+    }
+
+    const stmt = db.prepare(sql);
 
     try {
-        const logs = stmt.all(userId, date);
+        const logs = stmt.all(...params);
 
         // Group logs into meals based on meal_group_id
         const mealsMap = new Map();
@@ -41,20 +76,14 @@ router.get('/', (req, res) => {
             if (!mealsMap.has(log.meal_group_id)) {
                 mealsMap.set(log.meal_group_id, {
                     meal_group_id: log.meal_group_id,
-                    // Use the logged_at of the first item added to this group as the meal's time
                     logged_at: log.logged_at,
                     items: []
                 });
             }
-            // Add the log item to its corresponding meal group
             mealsMap.get(log.meal_group_id).items.push(log);
         });
 
-        // Convert the Map values to an array for the response
         const meals = Array.from(mealsMap.values());
-
-        // Optional: Sort meals by their first item's logged_at time if needed
-        // meals.sort((a, b) => new Date(a.logged_at) - new Date(b.logged_at));
 
         res.json(meals);
     } catch (err) {
@@ -174,6 +203,70 @@ router.delete('/:id', (req, res) => {
          console.error("Error deleting food log entry:", err);
          res.status(500).json({ message: "Internal server error while deleting food log entry." });
     }
+});
+
+/* PATCH /api/food-log/:id
+* Updates an existing food log entry for the authenticated user.
+* Only the fields provided in the request body will be updated.
+* Currently supports updating: weight_g, meal_group_id.
+* Body: { weight_g: number (optional), meal_group_id: string (optional) }
+* @param {string} id - The ID of the food log entry to update.
+* @returns {Promise<Object>} - A promise that resolves to the updated log entry.
+* Returns 400 if validation fails, 404 if the entry is not found or doesn't belong to the user.
+*/
+router.patch('/:id', (req, res) => {
+  const userId = req.auth.payload.sub;
+  const logId = req.params.id;
+  const { weight_g, meal_group_id } = req.body; // Allow partial updates
+
+  // Basic validation for provided fields
+  const updates = {};
+  if (weight_g !== undefined) {
+    if (typeof weight_g !== 'number' || weight_g <= 0) {
+      return res.status(400).json({ message: "If provided, 'weight_g' must be a positive number." });
+    }
+    updates.weight_g = weight_g;
+  }
+  if (meal_group_id !== undefined) {
+     if (typeof meal_group_id !== 'string' || meal_group_id.trim() === '') {
+       return res.status(400).json({ message: "If provided, 'meal_group_id' must be a non-empty string." });
+     }
+     updates.meal_group_id = meal_group_id.trim();
+  }
+
+  // Check if there's anything to update
+  if (Object.keys(updates).length === 0) {
+     return res.status(400).json({ message: "At least one field (weight_g, meal_group_id) must be provided for update." });
+  }
+
+  // Build dynamic UPDATE query
+  const setClauseParts = Object.keys(updates).map(key => `${key} = ?`);
+  const setClause = setClauseParts.join(', ');
+  const values = [...Object.values(updates), logId, userId]; // Add logId and userId for WHERE clause
+
+  const sql = `
+    UPDATE daily_food_log
+    SET ${setClause}
+    WHERE id = ? AND user_id = ?
+  `;
+
+  try {
+    const stmt = db.prepare(sql);
+    const info = stmt.run(...values);
+
+    if (info.changes === 0) {
+      return res.status(404).json({ message: "Food log entry not found or you do not have permission to update it." });
+    }
+
+    // Fetch the updated entry to return it
+    const selectStmt = db.prepare('SELECT * FROM daily_food_log WHERE id = ?');
+    const updatedEntry = selectStmt.get(logId);
+
+    res.json(updatedEntry);
+  } catch (err) {
+    console.error("Error updating food log entry:", err);
+    res.status(500).json({ message: "Internal server error while updating food log entry." });
+  }
 });
 
 module.exports = router;
