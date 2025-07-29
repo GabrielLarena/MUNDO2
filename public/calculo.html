@@ -31,25 +31,28 @@
     </nav>
   </header>
 
-  <main class="main-container">
+   <main class="main-container">
     <section class="section">
       <div class="text-content">
         <h1>Calculadora de Nutrientes</h1>
-        <p>Insira os ingredientes da sua refeição para obter a análise nutricional.</p>
-        <form>
-          <input type="text" placeholder="Ex: Arroz, Frango, Brócolis..." style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;" />
-          <button class="cta">Calcular</button>
-        </form>
+        <p>Pesquise ingredientes, defina quantidade e adicione ao prato.</p>
+        <div>
+          <input type="text" id="search-input" placeholder="Digite ingrediente..." style="width:100%; padding:0.5rem; margin-bottom:0.5rem;" />
+          <button id="btn-search" class="cta">Buscar</button>
+        </div>
+        <ul id="search-results"></ul>
+        <h2>Ingredientes no prato:</h2>
+        <ul id="selected-items"></ul>
+        <button id="btn-add-log" class="cta" style="margin-top:1rem;">Adicionar Prato ao Log</button>
+        <h2>Totals:</h2>
+        <div id="totals-output"></div>
       </div>
     </section>
   </main>
 
   <footer class="footer">
     <div class="footer-top">
-      <div class="footer-left">
-        <a href="index.html">
-          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
-        </a>
+      <div class="footer-left"><a href="index.html"><img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" /></a>
         <div class="footer-socials">
           <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
           <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
@@ -64,7 +67,92 @@
     </div>
     <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
   </footer>
-  
+
   <script src="script.js"></script>
+  <script type="module">
+    import apiClient from './src/lib/apiClient.js';
+    import { getAccessToken, logout } from './src/lib/authManager.js'; 
+    // Menu mobile
+    document.getElementById('burger').addEventListener('click', () => document.getElementById('menu').classList.toggle('open'));
+
+    let selected = [];
+
+    document.getElementById('btn-search').addEventListener('click', async () => {
+      const q = document.getElementById('search-input').value.trim();
+      const results = await apiClient.searchFoodItems(q || undefined);
+      const ul = document.getElementById('search-results');
+      ul.innerHTML = '';
+      results.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = `${item.name} — ${item.energy_kcal_per_100g} kcal /100 g`;
+        li.addEventListener('click', () => {
+          const weight = prompt(`Quantos gramas de ${item.name}?`);
+          const w = parseFloat(weight);
+          if (!isNaN(w) && w > 0) {
+            selected.push({ ...item, weight_g: w });
+            renderSelected();
+          }
+        });
+        ul.appendChild(li);
+      });
+    });
+
+    function renderSelected() {
+      const ul = document.getElementById('selected-items');
+      ul.innerHTML = '';
+      selected.forEach((it, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${it.name}: ${it.weight_g}g → ` +
+          `${((it.energy_kcal_per_100g * it.weight_g)/100).toFixed(1)} kcal, ` +
+          `${((it.protein_g_per_100g * it.weight_g)/100).toFixed(1)}g proteína, ` +
+          `${((it.carbs_g_per_100g * it.weight_g)/100).toFixed(1)}g carboidrato`;
+        const btn = document.createElement('button');
+        btn.textContent = 'Remover';
+        btn.addEventListener('click', () => {
+          selected.splice(i, 1);
+          renderSelected();
+        });
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+    }
+
+    async function calculateTotals() {
+      // O backend fornece totais por data inteira; aqui calculamos manual
+      const total = {
+        total_energy_kcal: selected.reduce((s,e) => s + (e.energy_kcal_per_100g * e.weight_g /100), 0),
+        total_protein_g: selected.reduce((s,e) => s + (e.protein_g_per_100g * e.weight_g /100), 0),
+        total_carbs_g: selected.reduce((s,e) => s + (e.carbs_g_per_100g * e.weight_g /100), 0)
+      };
+      return total;
+    }
+
+    document.getElementById('btn-add-log').addEventListener('click', async () => {
+      if (selected.length === 0) {
+        alert('Adicione pelo menos um ingrediente');
+        return;
+      }
+      const log_date = new Date().toISOString().split('T')[0];
+      try {
+        for (const it of selected) {
+          await apiClient.addFoodLogEntry({
+            food_item_id: it.id,
+            log_date,
+            weight_g: it.weight_g
+          });
+        }
+        const totals = await calculateTotals();
+        document.getElementById('totals-output').textContent =
+          `Prato adicionado: ${totals.total_energy_kcal.toFixed(1)} kcal, ` +
+          `${totals.total_protein_g.toFixed(1)}g proteína, ` +
+          `${totals.total_carbs_g.toFixed(1)}g carboidrato`;
+        selected = [];
+        renderSelected();
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao adicionar prato');
+      }
+    });
+  </script>
 </body>
 </html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calendário - Dietamigo</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <a href="index.html">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+      </a>
+    </div>
+    <button class="burger" id="burger" aria-label="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="index.html">🏠 Página Inicial</a></li>
+        <li><a href="login.html">🔐 Log In</a></li>
+        <li><a href="calculo.html">🥗 Dieta</a></li>
+        <li><a href="refeicao.html">🍽️ Pratos</a></li>
+        <li><a href="carreira.html">👔 Carreiras</a></li>
+        <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
+      </ul>
+      <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+    </nav>
+  </header>
+
+  <main class="main-container">
+    <section class="section">
+      <h1>Histórico de Refeições</h1>
+      <label for="data">Selecione a data:</label>
+      <input type="date" id="data" name="data"/>
+      <div id="resultado-refeicoes" class="refeicoes-lista">
+        <p>Selecione uma data para ver os pratos salvos.</p>
+      </div>
+
+      <hr />
+
+      <div id="auth-actions">
+        <p>Você não está logado.</p>
+        <a href="login.html" class="cta-button">Ir para o Login</a>
+      </div>
+
+      <div id="gated-content" class="hidden">
+        <p>Você está logado. <button id="btn-logout">Sair</button></p>
+        <button id="btn-run-tests">Atualizar Lembretes</button>
+
+        <h2>Adicionar Lembrete</h2>
+        <form id="reminder-form">
+          <label>Tipo:
+            <select name="type" required>
+              <option value="">Selecione</option>
+              <option value="one-time">Único</option>
+              <option value="recurring">Recorrente</option>
+            </select>
+          </label>
+
+          <div id="one-time-fields" class="hidden">
+            <label>Data e hora:
+              <input type="datetime-local" name="reminder_at" />
+            </label>
+          </div>
+
+          <div id="recurring-fields" class="hidden">
+            <label>Hora do dia:
+              <input type="time" name="time_of_day" />
+            </label>
+            <label>Dias da semana:
+              <select name="days_of_week" multiple>
+                <option value="MON">Segunda</option>
+                <option value="TUE">Terça</option>
+                <option value="WED">Quarta</option>
+                <option value="THU">Quinta</option>
+                <option value="FRI">Sexta</option>
+                <option value="SAT">Sábado</option>
+                <option value="SUN">Domingo</option>
+              </select>
+            </label>
+          </div>
+
+          <label>Título:
+            <input type="text" name="title" required />
+          </label>
+          <label>Descrição:
+            <textarea name="description"></textarea>
+          </label>
+          <button type="submit">Adicionar</button>
+        </form>
+
+        <div id="calendar-header"></div>
+        <div id="calendar"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="reminder-modal">
+    <div id="modal-content">
+      <span id="modal-close">&times;</span>
+      <h2 id="modal-title">Lembretes para ...</h2>
+      <ul id="modal-reminders-list"></ul>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-left">
+        <a href="index.html">
+          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
+        </a>
+        <div class="footer-socials">
+          <a href="#"><i class="fab fa-facebook-f social-icon"></i></a>
+          <a href="#"><i class="fab fa-instagram social-icon"></i></a>
+          <a href="#"><i class="fab fa-youtube social-icon"></i></a>
+        </div>
+      </div>
+      <div class="footer-links">
+        <a href="sobre.html">Sobre nós</a>
+        <a href="carreira.html">Carreiras</a>
+        <a href="#">Política de privacidade</a>
+      </div>
+    </div>
+    <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
+  </footer>
+
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+  <script type="module" src="src/lib/integracao-completa.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const resultadoDiv = document.getElementById('resultado-refeicoes');
+      const inputData = document.getElementById('data');
+
+      inputData.addEventListener('change', () => {
+        const dataSelecionada = inputData.value;
+        const registros = JSON.parse(localStorage.getItem('pratosPorData')) || {};
+
+        if (registros[dataSelecionada]) {
+          const pratos = registros[dataSelecionada];
+          resultadoDiv.innerHTML = `
+            <h2>Pratos do dia ${dataSelecionada}</h2>
+            <ul>
+              ${pratos.map(p => `<li>${p.nome} (${p.calorias} kcal)</li>`).join('')}
+            </ul>
+          `;
+        } else {
+          resultadoDiv.innerHTML = `<p>Nenhum prato registrado nesta data.</p>`;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

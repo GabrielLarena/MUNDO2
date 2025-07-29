@@ -1,0 +1,3 @@
+PORT=3000
+AUTH0_AUDIENCE=https://dietamigo
+AUTH0_ISSUER_BASE_URL=https://dev-x2v3dlltiosc2rnp.us.auth0.com/
