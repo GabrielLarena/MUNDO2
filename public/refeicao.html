@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pratos - Dietamigo</title>
+  <title>Carreiras - Dietamigo</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     /* --- Global Layout: 5% padding on sides, max width for meals --- */
     .content-wrapper {
@@ -212,7 +212,7 @@
     }
     .date-filter-form button {
         padding: 0.5rem 1rem;
-        background-color: #007bff;
+        background-color: #FF9800;
         color: white;
         border: none;
         border-radius: 4px;
@@ -220,7 +220,7 @@
         height: fit-content; /* Align with inputs */
     }
     .date-filter-form button:hover {
-        background-color: #0056b3;
+        background-color: #EF6C00;
     }
     .date-filter-form button[type="reset"] {
          background-color: #6c757d;
@@ -292,9 +292,13 @@
 <body>
   <header class="header">
     <div class="logo">
-      <a href="index.html"><img src="img/logo.png" alt="Logo Dietamigo" class="logo"></a>
+      <a href="index.html">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+      </a>
     </div>
-    <button class="burger" id="burger" aria-label="Menu"><i class="fas fa-bars"></i></button>
+    <button class="burger" id="burger" aria-label="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
     <nav class="menu" id="menu">
       <ul>
         <li><a href="index.html">🏠 Página Inicial</a></li>
@@ -304,9 +308,10 @@
         <li><a href="carreira.html">👔 Carreiras</a></li>
         <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
       </ul>
-      <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
     </nav>
   </header>
+
   <main class="main-container">
     <section class="section">
       <div class="content-wrapper"> <!-- 5% padding wrapper -->
@@ -314,8 +319,7 @@
         <p>Veja e edite suas refeições recentes.</p>
         
         <div id="auth-actions">
-          <p>Você não está logado.</p>
-          <a href="login.html" class="cta-button">Ir para o Login</a>
+          <p>Você não fez o login, Redirecionando a página...</p>
         </div>
         
         <div id="gated-content" class="hidden">
@@ -349,33 +353,39 @@
             <button id="next-page" aria-label="Próxima Página">Próxima</button>
             <span class="pagination-info">Itens por página: 50</span>
           </div>
+
+
           
         </div>
       </div>
+      <div style="display: flex; justify-content: space-between; width: 100%;">
+       <a href="calculo.html" class="cta">adiconar refeições</a>
+       <a href="calendario.html" class="cta right">Ver calendario</a>
+     </div>
     </section>
+  
   </main>
   <footer class="footer">
     <div class="footer-top">
       <div class="footer-left">
-        <a href="index.html"><img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" /></a>
+        <a href="index.html">
+          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
+        </a>
         <div class="footer-socials">
           <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
           <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
+          <a href="#" aria-label="YouTube"><i class="fab fa-youtube social-icon"></i></a>
         </div>
       </div>
-      <div class="footer-right">
-        <ul>
-          <li><a href="index.html">🏠 Página Inicial</a></li>
-          <li><a href="login.html">🔐 Log In</a></li>
-          <li><a href="calculo.html">🥗 Dieta</a></li>
-          <li><a href="refeicao.html">🍽️ Pratos</a></li>
-          <li><a href="carreira.html">👔 Carreiras</a></li>
-          <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
-        </ul>
+      <div class="footer-links">
+        <a href="sobre.html">Sobre nós</a>
+        <a href="carreira.html">Carreiras</a>
+        <a href="#">Política de privacidade</a>
       </div>
     </div>
     <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
   </footer>
+  <script src="script.js"></script>
   <!-- Auth0 SDK -->
   <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
   <script type="module">

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Calcular Nutrientes - Dietamigo</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
   <!-- Auth0 SPA SDK -->
   <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
   <style>
@@ -130,7 +131,7 @@
         text-align: right; /* Align calories to the right */
     }
     .selected-item button {
-        background-color: #dc3545;
+        background-color: #D32F2F;
         color: white;
         border: none;
         padding: 5px 10px;
@@ -148,7 +149,7 @@
         background-color: #e9ecef;
         border-radius: 4px;
         font-weight: bold;
-        text-align: center; /* Center totals on mobile */
+        text-align: right; /* Center totals on mobile */
     }
     /* Autocomplete dropdown styling */
     #search-results {
@@ -188,8 +189,14 @@
 </head>
 <body>
   <header class="header">
-    <div class="logo"><a href="index.html"><img src="img/logo.png" alt="Logo Dietamigo" class="logo"></a></div>
-    <button class="burger" id="burger" aria-label="Menu"><i class="fas fa-bars"></i></button>
+    <div class="logo">
+      <a href="index.html">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+      </a>
+    </div>
+    <button class="burger" id="burger" aria-label="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
     <nav class="menu" id="menu">
       <ul>
         <li><a href="index.html">🏠 Página Inicial</a></li>
@@ -199,21 +206,19 @@
         <li><a href="carreira.html">👔 Carreiras</a></li>
         <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
       </ul>
-      <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
     </nav>
   </header>
 
   <main class="main-container">
     <section class="section">
       <div class="text-content">
-        <h1>Calculadora de Nutrientes</h1>
+        <h1>Calculadora de Nutrientes!</h1>
         <p>Pesquise ingredientes, defina quantidade e adicione ao prato.</p>
 
         <!-- Auth UI -->
         <div id="auth-actions">
-            <p>You are not logged in.</p>
-            <!-- Redirect button/link to login.html -->
-            <a href="login.html" class="cta-button">Go to Login</a>
+            <p>Você não fez o login, Redirecionando a página...</p>
         </div>
         <div id="gated-content" class="hidden">
             <p>You are logged in. <button id="btn-logout">Logout</button></p>
@@ -236,20 +241,23 @@
         </div>
       </div>
       <div class="image-content">
-        <img src="img/hero-01.jpg" alt="Imagem Heroi" />
+        <img src="img/hero-03.jpg" alt="Imagem Heroi" />
       </div>
+    </section>
+    <section class="section">
+        <a href="refeicao.html" class="cta right">Ver minhas refeições</a>
     </section>
   </main>
 
   <footer class="footer">
-    <div class="footer-content">
-      <div class="footer-info">
-        <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
-        <p>Seu parceiro digital para uma vida mais saudável.</p>
-        <div class="social-icons">
+    <div class="footer-top">
+      <div class="footer-left">
+        <a href="index.html">
+          <img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" />
+        </a>
+        <div class="footer-socials">
           <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
           <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
-          <a href="#" aria-label="Twitter"><i class="fab fa-twitter social-icon"></i></a>
           <a href="#" aria-label="YouTube"><i class="fab fa-youtube social-icon"></i></a>
         </div>
       </div>
