@@ -159,7 +159,7 @@ html, body {
 .text-content p {
   margin-bottom: 0.5rem;
   line-height: 1.2;
-  text-align: justify;
+  text-align: center;
 }
 
 #vagas .text-content p {

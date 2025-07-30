@@ -13,6 +13,7 @@ const remindersRouter = require('./routes/reminders.cjs');
 const foodLogRouter = require('./routes/food-log.cjs');
 const utilsRouter = require('./routes/utils.cjs');
 const foodItemsRouter = require('./routes/food-items.cjs');
+const uploadsRouter = require('./routes/uploads.cjs');
 
 // --- Initialization ---
 const app = express();
@@ -35,6 +36,10 @@ const checkJwt = auth({
 // --- Middlewares ---
 app.use(express.json());
 app.use(express.static('public'));
+
+app.use('/uploads', express.static('uploads')); 
+
+app.use('/api/upload-resume', uploadsRouter);
 
 // --- API Router ---
 const apiRouter = express.Router();
@@ -240,6 +245,35 @@ const express = require('express');
 const { db } = require('../db/database.cjs');
 
 const router = express.Router();
+
+router.use((req, res, next) => {
+  const userId = req.auth.payload.sub;
+  const findUserStmt = db.prepare('SELECT * FROM users WHERE id = ?');
+  let user = findUserStmt.get(userId);
+
+  if (!user) {
+    const userEmail = req.auth.payload[process.env.AUTH0_AUDIENCE + 'email'];
+    if (!userEmail) {
+       console.log("Warning: Email claim not found in token for user", userId);
+       userEmail = null; // Or handle as appropriate
+    }
+
+    const insertUserStmt = db.prepare('INSERT INTO users (id, email) VALUES (?, ?)');
+    try {
+       insertUserStmt.run(userId, userEmail); // Might insert email as NULL if userEmail is null
+       user = findUserStmt.get(userId); // Re-fetch the newly created user
+       console.log("New user created in DB:", userId);
+    } catch (insertError) {
+        console.error("Error creating user in DB:", insertError);
+        // If it's a unique constraint error, maybe the user was created concurrently,
+        // but that's unlikely with the SELECT check. Re-throw or handle.
+        return res.status(500).json({ message: "Internal server error during user setup." });
+    }
+  }
+
+  // If user exists or was just created, continue
+  next();
+});
 
 // Helper function to calculate dates for a recurring reminder within a date range
 function getDatesForRecurringReminder(startDateStr, endDateStr, timeOfDay, daysOfWeekStr) {
@@ -533,6 +567,106 @@ router.patch('/', (req, res) => {
 
 module.exports = router;
 
+// src/routes/uploads.cjs
+const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+const router = express.Router();
+
+const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads', 'resumes');
+
+if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, UPLOADS_DIR);
+    },
+    filename: (req, file, cb) => {
+
+        // NOME GENERICO TEMPORÁRIO
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const fileExtension = path.extname(file.originalname);
+        cb(null, `${file.fieldname}-${uniqueSuffix}${fileExtension}`);
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+        cb(null, true);
+    } else {
+        
+        req.fileValidationError = 'Apenas arquivos PDF são permitidos!';
+        cb(null, false);
+    }
+};
+
+
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // Limite de 5MB
+    }
+});
+
+router.post('/', upload.single('resume'), (req, res, next) => {
+    console.log('Requisição de upload recebida!');
+    console.log('Vaga de emprego recebida (req.body.jobTitle):', req.body.jobTitle);
+
+    if (req.file) {
+        const jobTitle = req.body.jobTitle;
+        const oldPath = req.file.path; 
+        const fileExtension = path.extname(req.file.originalname);
+
+        const jobTitleSafe = jobTitle ? jobTitle.replace(/[^a-zA-Z0-9_]/g, '') : 'vaga_nao_especificada';
+        const newFilename = `${jobTitleSafe}-${req.file.fieldname}-${Date.now()}${fileExtension}`;
+        const newPath = path.join(UPLOADS_DIR, newFilename);
+
+        fs.rename(oldPath, newPath, (err) => {
+            if (err) {
+                console.error('Erro ao renomear o arquivo:', err);
+              
+                fs.unlink(oldPath, (unlinkErr) => {
+                    if (unlinkErr) console.error('Erro ao remover arquivo temporário após falha na renomeação:', unlinkErr);
+                });
+                return res.status(500).json({ message: 'Erro ao processar o arquivo.', error: err.message });
+            }
+
+            console.log(`Currículo para a vaga "${jobTitle}" recebido: ${newFilename}`);
+            res.status(200).json({
+                message: 'Currículo enviado com sucesso!',
+                filename: newFilename,
+                filepath: `/uploads/resumes/${newFilename}`,
+                jobTitle: jobTitle
+            });
+        });
+
+    } else {
+        
+        if (req.fileValidationError) {
+            return res.status(400).json({ message: req.fileValidationError });
+        }
+        res.status(400).json({ message: 'Nenhum arquivo de currículo enviado ou arquivo inválido.' });
+    }
+}, (error, req, res, next) => {
+    // Middleware de tratamento de erro do Multer
+    if (error instanceof multer.MulterError) {
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ message: 'O arquivo é muito grande. Tamanho máximo permitido é 5MB.' });
+        }
+        return res.status(400).json({ message: error.message });
+    }
+    if (error) {
+        return res.status(400).json({ message: error.message });
+    }
+    next(error);
+});
+
+module.exports = router;
 // src/routes/glucose.cjs
 const express = require('express');
 const { db } = require('../db/database.cjs');
@@ -648,15 +782,29 @@ const { db } = require('../db/database.cjs');
 const router = express.Router();
 
 /**
- * GET /api/food-log?date=YYYY-MM-DD
- * Gets the food log for a specific date, grouped into "meals" by meal_group_id.
- * Defaults to today's date if 'date' query param is not provided.
- * Returns: [{ meal_group_id: "...", logged_at: "...", items: [{...}, {...}] }, {...}]
+ * GET /api/food-log
+ * Optional query params:
+ *   - date (YYYY-MM-DD): filter logs by a specific date
+ *   - limit (number): limit number of results
+ *   - offset (number): offset for pagination
+ *
+ * Returns:
+ * [
+ *   {
+ *     meal_group_id: "...",
+ *     logged_at: "...",
+ *     items: [{...}, {...}]
+ *   },
+ *   ...
+ * ]
  */
 router.get('/', (req, res) => {
     const userId = req.auth.payload.sub;
-    const date = req.query.date || new Date().toISOString().split('T')[0];
-    const stmt = db.prepare(`
+
+    const { date, limit, offset } = req.query;
+
+    // Build dynamic query
+    let sql = `
         SELECT
             l.id AS log_id,
             l.user_id,
@@ -671,12 +819,33 @@ router.get('/', (req, res) => {
             f.carbs_g_per_100g
         FROM daily_food_log l
         JOIN food_items f ON l.food_item_id = f.id
-        WHERE l.user_id = ? AND l.log_date = ?
-        ORDER BY l.meal_group_id ASC, l.logged_at ASC
-    `);
+        WHERE l.user_id = ?
+    `;
+    const params = [userId];
+
+    // Apply date filter if provided
+    if (date) {
+        sql += ` AND l.log_date = ?`;
+        params.push(date);
+    }
+
+    // Always order by meal group and logged time
+    sql += ` ORDER BY l.meal_group_id ASC, l.logged_at ASC`;
+
+    // Apply limit and offset if provided
+    if (limit) {
+        sql += ` LIMIT ?`;
+        params.push(parseInt(limit));
+    }
+    if (offset) {
+        sql += ` OFFSET ?`;
+        params.push(parseInt(offset));
+    }
+
+    const stmt = db.prepare(sql);
 
     try {
-        const logs = stmt.all(userId, date);
+        const logs = stmt.all(...params);
 
         // Group logs into meals based on meal_group_id
         const mealsMap = new Map();
@@ -685,20 +854,14 @@ router.get('/', (req, res) => {
             if (!mealsMap.has(log.meal_group_id)) {
                 mealsMap.set(log.meal_group_id, {
                     meal_group_id: log.meal_group_id,
-                    // Use the logged_at of the first item added to this group as the meal's time
                     logged_at: log.logged_at,
                     items: []
                 });
             }
-            // Add the log item to its corresponding meal group
             mealsMap.get(log.meal_group_id).items.push(log);
         });
 
-        // Convert the Map values to an array for the response
         const meals = Array.from(mealsMap.values());
-
-        // Optional: Sort meals by their first item's logged_at time if needed
-        // meals.sort((a, b) => new Date(a.logged_at) - new Date(b.logged_at));
 
         res.json(meals);
     } catch (err) {
@@ -817,6 +980,162 @@ router.delete('/:id', (req, res) => {
     } catch(err) {
          console.error("Error deleting food log entry:", err);
          res.status(500).json({ message: "Internal server error while deleting food log entry." });
+    }
+});
+
+/* PATCH /api/food-log/:id
+* Updates an existing food log entry for the authenticated user.
+* Only the fields provided in the request body will be updated.
+* Currently supports updating: weight_g, meal_group_id.
+* Body: { weight_g: number (optional), meal_group_id: string (optional) }
+* @param {string} id - The ID of the food log entry to update.
+* @returns {Promise<Object>} - A promise that resolves to the updated log entry.
+* Returns 400 if validation fails, 404 if the entry is not found or doesn't belong to the user.
+*/
+router.patch('/:id', (req, res) => {
+  const userId = req.auth.payload.sub;
+  const logId = req.params.id;
+  const { weight_g, meal_group_id } = req.body; // Allow partial updates
+
+  // Basic validation for provided fields
+  const updates = {};
+  if (weight_g !== undefined) {
+    if (typeof weight_g !== 'number' || weight_g <= 0) {
+      return res.status(400).json({ message: "If provided, 'weight_g' must be a positive number." });
+    }
+    updates.weight_g = weight_g;
+  }
+  if (meal_group_id !== undefined) {
+     if (typeof meal_group_id !== 'string' || meal_group_id.trim() === '') {
+       return res.status(400).json({ message: "If provided, 'meal_group_id' must be a non-empty string." });
+     }
+     updates.meal_group_id = meal_group_id.trim();
+  }
+
+  // Check if there's anything to update
+  if (Object.keys(updates).length === 0) {
+     return res.status(400).json({ message: "At least one field (weight_g, meal_group_id) must be provided for update." });
+  }
+
+  // Build dynamic UPDATE query
+  const setClauseParts = Object.keys(updates).map(key => `${key} = ?`);
+  const setClause = setClauseParts.join(', ');
+  const values = [...Object.values(updates), logId, userId]; // Add logId and userId for WHERE clause
+
+  const sql = `
+    UPDATE daily_food_log
+    SET ${setClause}
+    WHERE id = ? AND user_id = ?
+  `;
+
+  try {
+    const stmt = db.prepare(sql);
+    const info = stmt.run(...values);
+
+    if (info.changes === 0) {
+      return res.status(404).json({ message: "Food log entry not found or you do not have permission to update it." });
+    }
+
+    // Fetch the updated entry to return it
+    const selectStmt = db.prepare('SELECT * FROM daily_food_log WHERE id = ?');
+    const updatedEntry = selectStmt.get(logId);
+
+    res.json(updatedEntry);
+  } catch (err) {
+    console.error("Error updating food log entry:", err);
+    res.status(500).json({ message: "Internal server error while updating food log entry." });
+  }
+});
+
+/*** GET /api/food-log/range
+* Fetches the food log for a date range, grouped into meals.
+* Query params:
+* - startDate (YYYY-MM-DD): Start date (inclusive)
+* - endDate (YYYY-MM-DD): End date (inclusive)
+* Returns:
+* An array of meal objects, grouped by date within the range:
+* [
+*   { date: "YYYY-MM-DD", meals: [ { meal_group_id, logged_at, items: [...] }, ... ] },
+*   ...
+* ]
+* Note: Meals within each date are ordered by meal_group_id and logged_at.*/
+router.get('/range', (req, res) => {
+    const userId = req.auth.payload.sub;
+    const { startDate, endDate } = req.query;
+
+    // Basic validation
+    if (!startDate || !endDate) {
+        return res.status(400).json({ message: "startDate and endDate query parameters are required." });
+    }
+
+    // Optional: Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+        return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
+    }
+
+    // Query to fetch logs within the date range
+    const sql = `
+        SELECT
+            l.id AS log_id,
+            l.user_id,
+            l.log_date,
+            l.food_item_id,
+            l.weight_g,
+            l.logged_at,
+            l.meal_group_id,
+            f.name AS food_name,
+            f.energy_kcal_per_100g,
+            f.protein_g_per_100g,
+            f.carbs_g_per_100g
+        FROM daily_food_log l
+        JOIN food_items f ON l.food_item_id = f.id
+        WHERE l.user_id = ? AND l.log_date BETWEEN ? AND ?
+        ORDER BY l.log_date ASC, l.meal_group_id ASC, l.logged_at ASC
+    `;
+
+    const params = [userId, startDate, endDate];
+
+    const stmt = db.prepare(sql);
+    try {
+        const logs = stmt.all(...params);
+
+        // Group logs into meals based on meal_group_id
+        const mealsByDateMap = new Map(); // Key: log_date string, Value: Map of meals for that date
+        logs.forEach(log => {
+            const dateStr = log.log_date;
+            if (!mealsByDateMap.has(dateStr)) {
+                mealsByDateMap.set(dateStr, new Map()); // Inner map for meals of this date
+            }
+            const mealsMapForDate = mealsByDateMap.get(dateStr);
+
+            if (!mealsMapForDate.has(log.meal_group_id)) {
+                mealsMapForDate.set(log.meal_group_id, {
+                    meal_group_id: log.meal_group_id,
+                    logged_at: log.logged_at,
+                    items: []
+                });
+            }
+            mealsMapForDate.get(log.meal_group_id).items.push(log);
+        });
+
+        // Convert grouped data into the desired output format
+        const result = [];
+        mealsByDateMap.forEach((mealsMapForDate, dateStr) => {
+             const mealsArray = Array.from(mealsMapForDate.values());
+             result.push({
+                 date: dateStr,
+                 meals: mealsArray
+             });
+        });
+
+        // Sort the final result by date ascending
+        result.sort((a, b) => a.date.localeCompare(b.date));
+
+        res.json(result);
+    } catch (err) {
+        console.error("Error fetching food log range:", err);
+        res.status(500).json({ message: "Internal server error while fetching food log range." });
     }
 });
 
@@ -960,6 +1279,44 @@ module.exports = router;
 const express = require('express');
 const { db } = require('../db/database.cjs');
 const router = express.Router();
+
+router.use((req, res, next) => {
+  const userId = req.auth.payload.sub;
+  const findUserStmt = db.prepare('SELECT * FROM users WHERE id = ?');
+  let user = findUserStmt.get(userId);
+
+  if (!user) {
+    // Try to get email from a custom claim if needed, or just use sub
+    // This part depends on your specific setup and needs
+    const userEmail = req.auth.payload[process.env.AUTH0_AUDIENCE + 'email'];
+    if (!userEmail) {
+       // Fallback or error handling if email is critical and not found
+       // For just creating the user link, maybe email isn't strictly needed initially
+       // Or you could decide not to create the user here if email is missing
+       // Let's assume id (sub) is enough for the FK for now.
+       console.log("Warning: Email claim not found in token for user", userId);
+       // You could potentially just insert with NULL email or a placeholder
+       // Or skip user creation if email is mandatory for your user logic.
+       // For now, let's proceed with just the ID for the FK.
+       userEmail = null; // Or handle as appropriate
+    }
+
+    const insertUserStmt = db.prepare('INSERT INTO users (id, email) VALUES (?, ?)');
+    try {
+       insertUserStmt.run(userId, userEmail); // Might insert email as NULL if userEmail is null
+       user = findUserStmt.get(userId); // Re-fetch the newly created user
+       console.log("New user created in DB:", userId);
+    } catch (insertError) {
+        console.error("Error creating user in DB:", insertError);
+        // If it's a unique constraint error, maybe the user was created concurrently,
+        // but that's unlikely with the SELECT check. Re-throw or handle.
+        return res.status(500).json({ message: "Internal server error during user setup." });
+    }
+  }
+
+  // If user exists or was just created, continue
+  next();
+});
 
 /**
  * GET /api/food-items/search?q=<query>

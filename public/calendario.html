@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calendário - Dietamigo</title>
+<link rel="stylesheet" href="styles.css" />
+<!-- Corrected Font Awesome link -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<!-- Auth0 SPA SDK -->
+<script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+<style>
+/* Basic styles to ensure the page is blank during processing */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa; /* Light background for whole page */
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Default font */
+}
+body.processing {
+    display: none;
+}
+/* - Calendar & Modal Styling - */
+#calendar-container {
+    max-width: 1000px;
+    margin: 20px auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #fff;
+}
+#calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #1B5E20; /* Bootstrap primary */
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+/* Navigation Buttons */
+.nav-btn {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.5); /* Semi-transparent border */
+    color: white;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+.nav-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1); /* Light hover effect */
+    border-color: rgba(255, 255, 255, 0.8);
+}
+.nav-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+#calendar-month-year {
+    flex-grow: 1;
+    text-align: center;
+    margin: 0 10px; /* Space around the month/year text */
+}
+#calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background-color: #dee2e6; /* Bootstrap light border color */
+    padding: 1px;
+}
+.calendar-day {
+    position: relative; /* For absolute positioning of dot */
+    min-height: 100px; /* Minimum height for each day cell */
+    padding: 8px; /* Increased padding */
+    background-color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Contain content */
+    text-align: right; /* Align date number to the right/top */
+    font-size: 1rem; /* Base font size for day content */
+}
+/* Styling for weekday headers */
+.calendar-day.header {
+    font-weight: bold;
+    background-color: #6c757d !important; /* Distinct darker gray */
+    color: #ffffff !important; /* White text */
+    text-align: center;
+    padding: 12px 8px; /* More padding for headers */
+    font-size: 1.1rem; /* Slightly larger font for headers */
+    min-height: auto; /* Override min-height for headers */
+    cursor: default; /* Remove pointer cursor */
+}
+.calendar-day .date-number {
+    font-weight: bold;
+    font-size: 1.1rem; /* Slightly larger date number */
+    margin-bottom: 5px;
+    color: #343a40; /* Darker color for date number */
+}
+.calendar-day:hover:not(.header) {
+    background-color: #e9ecef; /* Bootstrap light gray on hover */
+}
+.calendar-day.has-reminders {
+    background-color: #fff3cd; /* Bootstrap warning light yellow */
+}
+.calendar-day.has-reminders:hover:not(.header) {
+    background-color: #ffecb5; /* Slightly darker on hover */
+}
+.calendar-day.empty {
+    background-color: #f8f9fa;
+    cursor: default;
+}
+.calendar-day.empty:hover {
+    background-color: #f8f9fa; /* No hover effect on empty cells */
+}
+/* Dot indicator for reminders */
+.calendar-day.has-reminders::after {
+    content: "•"; /* Dot indicator */
+    color: #dc3545; /* Bootstrap danger color */
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    font-size: 1.2rem;
+}
+/* - Combined Modal Styles - */
+#combined-modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+}
+.modal-content-combined {
+    background-color: #fefefe;
+    margin: 5% auto; /* Reduced margin from top */
+    padding: 20px;
+    border: 1px solid #888;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh; /* Limit height */
+    overflow-y: auto; /* Scroll inside modal if content is large */
+    position: relative; /* For positioning close button */
+}
+.modal-close-combined {
+    color: #aaa;
+    float: right; /* Float close button to the right */
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    position: absolute; /* Position it absolutely */
+    top: 10px;
+    right: 15px;
+}
+.modal-close-combined:hover,
+.modal-close-combined:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+#modal-combined-title {
+    margin-top: 0; /* Remove default top margin */
+    margin-right: 40px; /* Space for the close button */
+}
+/* Sections within the modal */
+.modal-section {
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: #fafafa;
+}
+.modal-section h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+    display: flex;
+    justify-content: space-between; /* Align title left, add button right */
+    align-items: center;
+}
+/* --- Updated Reminder List Styling --- */
+#modal-reminders-list-combined {
+    list-style: none;
+    padding: 0;
+    margin: 0; /* Reset margin */
+}
+#modal-reminders-list-combined li {
+    padding: 0.75rem; /* Increased padding */
+    display: flex; /* Use flexbox for layout */
+    align-items: center; /* Align items vertically center */
+    gap: 10px; /* Space between elements */
+    position: relative; /* For positioning action buttons */
+}
+/* Reminder Item Content */
+.reminder-item-content {
+    flex-grow: 1; /* Take up remaining space */
+    cursor: pointer;
+    min-width: 0; /* Allow text truncation */
+}
+.reminder-item-content.readonly {
+    display: block; /* Show when not editing */
+}
+.reminder-item-content.editing {
+    display: none; /* Hide when editing */
+}
+/* Reminder Item Edit Form */
+.reminder-item-edit-form {
+    display: none; /* Hidden by default */
+    flex-grow: 1; /* Take up remaining space */
+    flex-direction: column; /* Stack inputs vertically */
+    gap: 5px; /* Space between inputs */
+}
+.reminder-item-edit-form.active {
+    display: flex; /* Show when editing */
+}
+.reminder-edit-input, .reminder-edit-textarea {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Include padding/border in width */
+    font-family: inherit; /* Match font */
+    font-size: 0.9em;
+}
+.reminder-edit-textarea {
+    resize: vertical; /* Allow vertical resize */
+    min-height: 40px; /* Minimum height */
+}
+.reminder-edit-buttons {
+    display: flex;
+    gap: 5px; /* Space between buttons */
+    justify-content: flex-end; /* Align buttons to the right */
+    margin-top: 5px; /* Space above buttons */
+}
+.reminder-edit-save, .reminder-edit-cancel {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+.reminder-edit-save {
+    background-color: #28a745; /* Green */
+    color: white;
+}
+.reminder-edit-save:hover {
+    background-color: #218838;
+}
+.reminder-edit-cancel {
+    background-color: #6c757d; /* Gray */
+    color: white;
+}
+.reminder-edit-cancel:hover {
+    background-color: #5a6268;
+}
+/* Reminder Title & Description Display */
+.modal-reminder-title-combined {
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+    word-break: break-word; /* Break long words */
+}
+.modal-reminder-desc-combined {
+    margin-bottom: 0.25rem;
+    font-size: 0.9em;
+    color: #666;
+    word-break: break-word; /* Break long words */
+}
+.modal-reminder-time-combined {
+    font-size: 0.85em;
+    color: #999;
+}
+/* Action Buttons (Delete/Edit) */
+.reminder-action-btn {
+    background: none;
+    border: 1px solid transparent; /* Invisible border for consistent sizing */
+    padding: 5px;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex; /* Center icon */
+    align-items: center;
+    justify-content: center;
+    min-width: 30px; /* Consistent width */
+    min-height: 30px; /* Consistent height */
+    font-size: 0.9rem;
+}
+.reminder-action-btn:hover {
+    border-color: #ccc;
+    background-color: #f8f9fa;
+}
+.reminder-delete-btn {
+    color: #dc3545; /* Red */
+}
+.reminder-edit-btn {
+    color: #007bff; /* Blue */
+}
+/* Add New Reminder Item */
+.add-reminder-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    background-color: #e9ecef;
+    border: 1px dashed #adb5bd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    text-align: center;
+    color: #495057;
+    font-weight: bold;
+}
+.add-reminder-item:hover {
+    background-color: #dee2e6;
+}
+.add-reminder-item i {
+    margin-right: 8px; /* Space between icon and text */
+}
+/* Add New Reminder Form (Inline) */
+.add-reminder-form-inline {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+.add-reminder-form-inline.active {
+    display: flex; /* Show when active */
+}
+.add-reminder-input, .add-reminder-textarea, .add-reminder-date, .add-reminder-time {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+.add-reminder-textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+.add-reminder-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.add-reminder-submit, .add-reminder-cancel {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.add-reminder-submit {
+    background-color: #007bff; /* Blue */
+    color: white;
+}
+.add-reminder-submit:hover {
+    background-color: #0056b3;
+}
+.add-reminder-cancel {
+    background-color: #6c757d; /* Gray */
+    color: white;
+}
+.add-reminder-cancel:hover {
+    background-color: #5a6268;
+}
+#btn-logout {
+      background-color: #dc3545;
+      display: inline-block;
+      font-size: 1rem;
+      padding: 0.75rem 1.5rem;
+      color: white;
+      text-decoration: none;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      width: fit-content;
+    }
+    #btn-logout:hover {
+      background-color: #c82333;
+    }
+    #btn-run-tests {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+    }
+    #btn-run-tests:hover {
+      background-color: #218838;
+    }
+    .totais-mes {
+  background-color: #f4f4f4;
+  padding: 10px 16px;
+  margin: 12px auto;
+  border-radius: 8px;
+  width: fit-content;
+  font-weight: bold;
+  font-size: 1rem;
+  color: #333;
+}
+/* --- End Updated Reminder List Styling --- */
+/* Food Log Summary */
+/*#modal-summary-content-combined {
+    /* padding: 10px; */ /* Padding handled by modal-section */
+    /* background-color: #f0f8ff; */ /* Light blue background - handled by modal-section */
+    /* border-radius: 4px; */ /* Handled by modal-section */
+/*}
+/* Link to detailed meals */
+.modal-link-combined {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 16px;
+    background-color: #4CAF50; /* Green */
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.modal-link-combined:hover {
+    background-color: #45a049;
+}
+/* Loading Spinner */
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+/* Error Message */
+.error {
+    color: #dc3545; /* Bootstrap danger color */
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    padding: 0.75rem 1.25rem;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+/* No Data Message */
+.no-data {
+    color: #6c757d; /* Bootstrap secondary color */
+    font-style: italic;
+    padding: 10px;
+    text-align: center;
+}
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #calendar {
+        gap: 0.5px;
+        padding: 0.5px;
+    }
+    .calendar-day {
+        min-height: 80px; /* Adjust height for smaller screens */
+        padding: 5px;
+        font-size: 0.9rem;
+    }
+    .calendar-day.header {
+        padding: 8px 5px; /* Adjust header padding */
+        font-size: 0.95rem;
+    }
+    .modal-content-combined {
+        width: 95%;
+        margin: 2% auto;
+        padding: 15px;
+    }
+    #modal-combined-title {
+        font-size: 1.2rem;
+    }
+    .nav-btn {
+        padding: 6px 12px; /* Smaller buttons on mobile */
+        font-size: 0.9rem;
+    }
+}
+/* Hide elements with 'hidden' class */
+.hidden {
+    display: none !important;
+}
+/* - End Calendar & Modal Styling - */
+</style>
+</head>
+<body>
+    <header class="header">
+    <div class="logo">
+      <a href="index.html">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+      </a>
+    </div>
+    <button class="burger" id="burger" aria-label="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="index.html">🏠 Página Inicial</a></li>
+        <li><a href="login.html">🔐 Log In</a></li>
+        <li><a href="calculo.html">🥗 Dieta</a></li>
+        <li><a href="refeicao.html">🍽️ Pratos</a></li>
+        <li><a href="calendario.html">📅 Calendário</a></li>
+        <li><a href="carreira.html">👔 Carreiras</a></li>
+        <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
+      </ul>
+       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+    </nav>
+  </header>
+    <main class="main-container">
+        <section class="section">
+      <div class="text-content">
+        <h1>Calendario de notificações</h1>
+        <p>Todas as informações do seu consumo e lembretes do mês.</p>
+      </div>
+    </section>
+        </section>
+        <section class="content">
+            <div id="auth-actions">
+                <p>Você precisa estar logado para ver o calendário. <button id="btn-login">Login</button></p>
+            </div>
+            <div id="gated-content" class="hidden">
+                <div class="loading-spinner" id="calendar-loading">
+                    <div class="spinner"></div>
+                    <p>Carregando calendário...</p>
+                </div>
+                <!-- Calendar Container -->
+                <div id="calendar-container">
+                    <div id="calendar-header">
+                        <button id="prev-month" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+                        <span id="calendar-month-year">Mês Ano</span> <!-- Placeholder for month/year -->
+                        <button id="next-month" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div id="calendar"><!-- Calendar will be rendered here by JavaScript --></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; width: 100%;">
+                  <a href="refeicao.html" class="cta">Ver suas refeições</a>
+                  <p>Você está logado. <button id="btn-logout">Sair</button></p>
+                 </div>
+                
+            </div>
+        </section>
+    </main>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-top">
+            <div class="footer-left">
+                <a href="index.html"><img src="img/logo.png" alt="Logo Dietamigo" class="footer-logo" /></a>
+                <div class="footer-socials">
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f social-icon"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram social-icon"></i></a>
+                    <a href="#" aria-label="YouTube"><i class="fab fa-youtube social-icon"></i></a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <a href="sobre.html">Sobre nós</a>
+                <a href="carreira.html">Carreiras</a>
+                <a href="#">Política de privacidade</a>
+            </div>
+        </div>
+        <p class="footer-bottom">© Dietamigo 2025. Todos os direitos reservados.</p>
+    </footer>
+    <!-- The Modal for displaying both reminders and food log summary -->
+    <div id="combined-modal">
+        <div class="modal-content-combined">
+            <span class="modal-close-combined">&times;</span>
+            <h2 id="modal-combined-title">Detalhes para ...</h2>
+            <!-- Reminders Section -->
+            <div class="modal-section">
+                <h3>
+                    Lembretes
+                    <button id="add-reminder-inline-btn" class="reminder-action-btn reminder-add-inline-btn" title="Adicionar Lembrete">
+                        <i class="fas fa-plus"></i> <!-- Font Awesome Plus Icon -->
+                    </button>
+                </h3>
+                <ul id="modal-reminders-list-combined">
+                    <!-- Reminders for the selected day will be populated here -->
+                    <!-- Special "Add New" item will be appended here -->
+                </ul>
+                <!-- Inline Add New Reminder Form -->
+                <div id="add-reminder-form-inline" class="add-reminder-form-inline">
+                    <input type="text" id="new-reminder-title" class="add-reminder-input" placeholder="Título do novo lembrete" required>
+                    <textarea id="new-reminder-description" class="add-reminder-textarea" placeholder="Descrição (opcional)"></textarea>
+                    <input type="date" id="new-reminder-date" class="add-reminder-date" required> <!-- Pre-filled by JS -->
+                    <input type="time" id="new-reminder-time" class="add-reminder-time" value="09:00" required> <!-- Pre-filled by JS -->
+                    <div class="add-reminder-buttons">
+                        <button id="add-reminder-submit" class="add-reminder-submit">Adicionar</button>
+                        <button id="add-reminder-cancel" class="add-reminder-cancel">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Food Log Summary Section -->
+            <div class="modal-section">
+                <h3>Resumo da Alimentação</h3>
+                <div id="modal-summary-content-combined">
+                    <!-- Summary will be inserted here -->
+                    <p>Carregando...</p>
+                </div>
+                <a id="modal-view-meals-link-combined" class="modal-link-combined" style="display:none;">Ver Refeições Detalhadas</a>
+            </div>
+        </div>
+    </div>
+    <!-- Auth0 SPA SDK -->
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+    <!-- Menu/mobile script -->
+    <script src="script.js"></script>
+    <!-- Your Application Script -->
+    <script type="module">
+        // Import the centralized auth manager and API client
+        import { getAccessToken, logout } from './src/lib/authManager.js';
+        import apiClient from './src/lib/apiClient.js';
+        // --- DOM Elements ---
+        const authActionsDiv = document.getElementById('auth-actions');
+        const gatedContentDiv = document.getElementById('gated-content');
+        const btnLogin = document.getElementById('btn-login');
+        const btnLogout = document.getElementById('btn-logout');
+        const reminderForm = document.getElementById("reminder-form");
+        const calendarEl = document.getElementById('calendar');
+        const headerEl = document.getElementById('calendar-month-year'); // Updated ID
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        const calendarLoading = document.getElementById('calendar-loading');
+        // --- Modal Elements ---
+        const combinedModal = document.getElementById('combined-modal');
+        const combinedModalTitle = document.getElementById('modal-combined-title');
+        const combinedModalRemindersList = document.getElementById('modal-reminders-list-combined');
+        const combinedModalSummaryContent = document.getElementById('modal-summary-content-combined');
+        const combinedModalViewMealsLink = document.getElementById('modal-view-meals-link-combined');
+        const combinedModalClose = document.querySelector('.modal-close-combined');
+        // --- Add Reminder Elements ---
+        const addReminderInlineBtn = document.getElementById('add-reminder-inline-btn');
+        const addReminderFormInline = document.getElementById('add-reminder-form-inline');
+        const newReminderTitleInput = document.getElementById('new-reminder-title');
+        const newReminderDescriptionInput = document.getElementById('new-reminder-description');
+        const newReminderDateInput = document.getElementById('new-reminder-date');
+        const newReminderTimeInput = document.getElementById('new-reminder-time');
+        const addReminderSubmitBtn = document.getElementById('add-reminder-submit');
+        const addReminderCancelBtn = document.getElementById('add-reminder-cancel');
+        // --- Global Variable to store fetched reminders ---
+        window.fetchedReminders = [];
+
+        // --- Calendar State ---
+        let currentCalendarYear = new Date().getFullYear();
+        let currentCalendarMonth = new Date().getMonth(); // 0-11
+
+        // --- Calendar Logic ---
+        function getDaysInMonth(year, month) {
+            return new Date(year, month + 1, 0).getDate();
+        }
+        function getDayOfWeekIndex(dayIndex) {
+             // Adjust for Brazilian week starting on Sunday (0)
+             return dayIndex === 0 ? 6 : dayIndex - 1;
+        }
+        // Function to group reminders by date (using Local Date String)
+        // This now considers ANY reminder with a 'reminder_at' field.
+        function groupRemindersByDate(reminders) {
+            const remindersByDate = {};
+            if (reminders && Array.isArray(reminders)) {
+                reminders.forEach(reminder => {
+                    // Check if the reminder object has the reminder_at property
+                    if (reminder.reminder_at) {
+                        try {
+                            // Create a Date object from the reminder_at string
+                            const dateObj = new Date(reminder.reminder_at);
+                            // Generate a date key in YYYY-MM-DD format based on LOCAL time
+                            // Using 'sv-SE' locale gives YYYY-MM-DD format based on local time
+                            const dateKey = dateObj.toLocaleDateString('sv-SE'); // 'sv-SE' locale outputs YYYY-MM-DD based on LOCAL time
+                            if (!remindersByDate[dateKey]) {
+                                remindersByDate[dateKey] = [];
+                            }
+                            remindersByDate[dateKey].push(reminder);
+                        } catch (e) {
+                            console.error("Error processing reminder date:", reminder, e);
+                        }
+                    } else {
+                        console.warn("Reminder missing 'reminder_at' field:", reminder);
+                    }
+                });
+            }
+            return remindersByDate;
+        }
+
+        async function fetchAndRenderCalendar(year, month) {
+            calendarLoading.style.display = 'flex'; // Show loading
+            try {
+                // Fetch reminders
+                const fetchedReminders = await apiClient.getReminders();
+                window.fetchedReminders = fetchedReminders; // Store globally
+                // Group reminders by date using LOCAL date logic
+                const remindersByDate = groupRemindersByDate(fetchedReminders);
+                // Render calendar grid with reminders
+                renderCalendar(remindersByDate, year, month);
+            } catch (error) {
+                console.error("Erro ao buscar dados para o calendário:", error);
+                calendarEl.innerHTML = '<p class="error">Erro ao carregar o calendário. Por favor, tente novamente.</p>';
+            } finally {
+                calendarLoading.style.display = 'none'; // Hide loading
+            }
+        }
+
+        function renderCalendar(remindersByDate, year, month) {
+            if (!calendarEl || !headerEl) {
+                console.error("Calendar elements not found in DOM");
+                return;
+            }
+            calendarEl.innerHTML = ''; // Clear previous calendar
+
+            const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                                "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+            // Update header with month/year
+            headerEl.textContent = `${monthNames[month]} ${year}`;
+
+            // Create day headers
+            for (let i = 0; i < 7; i++) {
+                 // Adjust day names for Brazilian week starting Sunday
+                 const adjustedIndex = getDayOfWeekIndex(i);
+                 const dayHeader = document.createElement('div');
+                 dayHeader.classList.add('calendar-day', 'header');
+                 dayHeader.textContent = dayNames[adjustedIndex];
+                 calendarEl.appendChild(dayHeader);
+            }
+
+            const daysInMonth = getDaysInMonth(year, month);
+            const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 (Sunday) - 6 (Saturday)
+
+            // Add empty cells for days before the 1st
+            // Adjust for Brazilian week starting Sunday
+            const adjustedFirstDay = getDayOfWeekIndex(firstDayOfMonth);
+            for (let i = 0; i < adjustedFirstDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.classList.add('calendar-day', 'empty');
+                calendarEl.appendChild(emptyCell);
+            }
+
+            // Add cells for each day of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.classList.add('calendar-day');
+                dayCell.innerHTML = `<div class="date-number">${day}</div>`; // Display date number
+                // --- Generate dateStr using LOCAL date to match groupRemindersByDate ---
+                const dateObj = new Date(year, month, day);
+                // Using 'sv-SE' locale gives YYYY-MM-DD format based on local time
+                const dateStr = dateObj.toLocaleDateString('sv-SE'); // 'sv-SE' locale outputs YYYY-MM-DD based on LOCAL time
+                dayCell.dataset.date = dateStr; // Store date for click handler
+
+                // Check if there are reminders for this date
+                if (remindersByDate[dateStr] && remindersByDate[dateStr].length > 0) {
+                    dayCell.classList.add('has-reminders');
+                }
+                calendarEl.appendChild(dayCell);
+            }
+        }
+
+        // --- Navigation Logic ---
+        function navigateMonth(direction) {
+            if (direction === 'prev') {
+                currentCalendarMonth--;
+                if (currentCalendarMonth < 0) {
+                    currentCalendarMonth = 11;
+                    currentCalendarYear--;
+                }
+            } else if (direction === 'next') {
+                currentCalendarMonth++;
+                if (currentCalendarMonth > 11) {
+                    currentCalendarMonth = 0;
+                    currentCalendarYear++;
+                }
+            }
+            fetchAndRenderCalendar(currentCalendarYear, currentCalendarMonth);
+        }
+
+        // --- Modal Logic ---
+        // Function to show reminders in the modal for a specific day (Updated)
+        function showRemindersInModal(reminders, dateKey) {
+            combinedModalRemindersList.innerHTML = ''; // Clear previous list
+            if (reminders && reminders.length > 0) {
+                reminders.forEach(reminder => {
+                    const listItem = document.createElement('li');
+                    // --- Reminder Item Structure ---
+                    // 1. Delete Button
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.classList.add('reminder-action-btn', 'reminder-delete-btn');
+                    deleteBtn.title = "Excluir Lembrete";
+                    deleteBtn.dataset.id = reminder.id; // Use original ID
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>'; // Font Awesome Trash Icon
+                    deleteBtn.addEventListener('click', async (e) => {
+                         e.stopPropagation(); // Prevent triggering parent click
+                         if (confirm(`Tem certeza que deseja excluir o lembrete "${reminder.title || 'Sem título'}"?`)) {
+                             try {
+                                 await apiClient.deleteReminder(reminder.id);
+                                 console.log(`Reminder ${reminder.id} deleted.`);
+                                 // Remove item from list
+                                 listItem.remove();
+                                 // Refresh calendar view if needed (optional, might be heavy)
+                                 // await fetchAndRenderCalendar();
+                                 // Or just remove the dot if no reminders left for the day
+                                 const dayCell = document.querySelector(`.calendar-day[data-date="${dateKey}"]`);
+                                 if (dayCell) {
+                                     const dayReminders = window.fetchedReminders.filter(r =>
+                                         // --- Use LOCAL date comparison ---
+                                         r.reminder_at && new Date(r.reminder_at).toLocaleDateString('sv-SE') === dateKey
+                                     );
+                                     if (dayReminders.length <= 1) { // Only the one we just deleted was left
+                                         dayCell.classList.remove('has-reminders');
+                                     }
+                                 }
+                                 // Update global fetchedReminders array
+                                 window.fetchedReminders = window.fetchedReminders.filter(r => r.id !== reminder.id);
+                             } catch (error) {
+                                 console.error("Error deleting reminder:", error);
+                                 alert("Erro ao excluir o lembrete. Por favor, tente novamente.");
+                             }
+                         }
+                    });
+                    // 2. Checkbox for 'check' status (REPLACES contentDiv, editBtn, editForm)
+                    const checkboxContainer = document.createElement('div');
+                    checkboxContainer.style.display = 'flex';
+                    checkboxContainer.style.alignItems = 'center';
+                    checkboxContainer.style.gap = '8px'; // Space between checkbox and text
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `reminder-check-${reminder.id}`;
+                    checkbox.checked = reminder.is_checked === 1; // Set initial state based on reminder data
+                    checkbox.style.cursor = 'pointer';
+                    const checkboxLabel = document.createElement('label');
+                    checkboxLabel.htmlFor = `reminder-check-${reminder.id}`;
+                    checkboxLabel.style.cursor = 'pointer';
+                    checkboxLabel.style.flexGrow = '1'; // Allow label to take remaining space
+                    checkboxLabel.style.marginBottom = '0'; // Override default margin
+                    // Combine title and description for the label text
+                    const labelText = `${reminder.title || 'Lembrete sem título'}${reminder.description ? ` - ${reminder.description}` : ''}`;
+                    checkboxLabel.textContent = labelText;
+                    // Truncate label text if too long (optional, for better UI)
+                    // checkboxLabel.title = labelText; // Show full text on hover
+                    // if (labelText.length > 50) {
+                    //     checkboxLabel.textContent = labelText.substring(0, 47) + '...';
+                    // }
+                     // Add event listener to the checkbox
+                     checkbox.addEventListener('change', async (e) => {
+                         const newCheckedState = e.target.checked == true ? 1 : 0; // Get the new state (true/false)
+                         const listItemToUpdate = e.target.closest('li'); // Find the parent list item
+                         const originalCheckbox = e.target; // Reference to the checkbox itself
+                         try {
+                             // 1. Disable checkbox/UI feedback (optional but good UX)
+                             originalCheckbox.disabled = true;
+                             listItemToUpdate.style.opacity = '0.7';
+                             // 2. Send update request to API
+                             // Send only the 'check' field with the toggled value
+                             await apiClient.updateReminder(reminder.id, { is_checked: newCheckedState });
+                             // 3. Update successful in backend
+                             console.log(`Reminder ${reminder.id} check status updated to ${newCheckedState}.`);
+                             // 4. Update the global fetchedReminders array
+                             const globalReminder = window.fetchedReminders.find(r => r.id === reminder.id);
+                             if (globalReminder) {
+                                 globalReminder.is_checked = newCheckedState; // Update the source of truth
+                             }
+                             // 5. Re-enable UI (if disabled)
+                             originalCheckbox.disabled = false;
+                             listItemToUpdate.style.opacity = '1';
+                             // Optional: Provide user feedback (e.g., brief highlight)
+                             // listItemToUpdate.style.backgroundColor = '#d4edda'; // Bootstrap success light
+                             // setTimeout(() => { listItemToUpdate.style.backgroundColor = ''; }, 500);
+                         } catch (error) {
+                             console.error("Error updating reminder check status:", error);
+                             // Revert checkbox state in UI if update failed
+                             originalCheckbox.checked = !newCheckedState;
+                             alert("Erro ao atualizar o status do lembrete. Por favor, tente novamente.");
+                             // Re-enable UI after error
+                             originalCheckbox.disabled = false;
+                             listItemToUpdate.style.opacity = '1';
+                         }
+                     });
+                    checkboxContainer.appendChild(checkbox);
+                    checkboxContainer.appendChild(checkboxLabel);
+                    // 3. Edit Button (REMOVE or HIDE - functionality replaced by checkbox)
+                    // You can remove the editBtn creation and appending code.
+                    // const editBtn = ... (existing code - DELETE or COMMENT OUT) ...
+                    // listItem.appendChild(editBtn); // DELETE or COMMENT OUT
+                    // 4. Edit Form (REMOVE or HIDE - functionality replaced by checkbox)
+                    // You can remove the editForm creation and appending code.
+                    // const editForm = ... (existing code - DELETE or COMMENT OUT) ...
+                    // listItem.appendChild(editForm); // DELETE or COMMENT OUT
+                    // Assemble the list item
+                    listItem.appendChild(deleteBtn);
+                    listItem.appendChild(checkboxContainer); // Add the new checkbox container
+                    // listItem.appendChild(editBtn); // DELETE or COMMENT OUT
+                    // listItem.appendChild(editForm); // DELETE or COMMENT OUT
+                    combinedModalRemindersList.appendChild(listItem);
+                });
+            } else {
+                const noReminderItem = document.createElement('li');
+                noReminderItem.classList.add('no-data');
+                noReminderItem.textContent = 'Nenhum lembrete para este dia.';
+                combinedModalRemindersList.appendChild(noReminderItem);
+            }
+            // --- Add the "Add New Reminder" Item ---
+            const addItem = document.createElement('li');
+            addItem.classList.add('add-reminder-item');
+            addItem.innerHTML = '<i class="fas fa-plus"></i> Adicionar Novo Lembrete';
+            addItem.addEventListener('click', () => {
+                 // Toggle visibility of the inline form
+                 addReminderFormInline.classList.toggle('active');
+                 if (addReminderFormInline.classList.contains('active')) {
+                     // Pre-fill date and time inputs
+                     newReminderDateInput.value = dateKey; // dateKey is YYYY-MM-DD
+                     newReminderTimeInput.value = '09:00'; // Default time
+                     newReminderTitleInput.focus(); // Focus the title input
+                 }
+            });
+            combinedModalRemindersList.appendChild(addItem);
+        }
+        // - Food Log Summary Logic (Corrected) -
+        async function showFoodLogSummaryInModal(clickedDateStr) { // e.g., "2023-10-27"
+            combinedModalSummaryContent.innerHTML = '<p>Carregando...</p>';
+            combinedModalViewMealsLink.style.display = 'none'; // Hide link initially
+            try {
+                // Fetch totals for the specific date using the correct method
+                const summary = await apiClient.getFoodLogTotals(clickedDateStr); // Use getFoodLogTotals
+                if (summary) {
+                    // Check if any totals are greater than 0 to determine if data exists
+                    const hasData = summary.total_energy_kcal > 0 ||
+                                    summary.total_protein_g > 0 ||
+                                    summary.total_carbs_g > 0 ||
+                                    summary.total_fat_g > 0; // Assuming total_fat_g exists
+                    if (hasData) {
+                        let summaryHtml = `<p><strong>Calorias:</strong> ${summary.total_energy_kcal?.toFixed(2) || 0} kcal</p>`;
+                        summaryHtml += `<p><strong>Proteínas:</strong> ${summary.total_protein_g?.toFixed(2) || 0} g</p>`;
+                        summaryHtml += `<p><strong>Carboidratos:</strong> ${summary.total_carbs_g?.toFixed(2) || 0} g</p>`;
+                        summaryHtml += `<p><strong>Gorduras:</strong> ${summary.total_fat_g?.toFixed(2) || 0} g</p>`; // Assuming total_fat_g exists
+                        // Add more summary fields as needed
+                        combinedModalSummaryContent.innerHTML = summaryHtml;
+                    } else {
+                        combinedModalSummaryContent.innerHTML = '<p>Nenhum registro alimentar encontrado para este dia.</p>';
+                    }
+                } else {
+                     combinedModalSummaryContent.innerHTML = '<p>Nenhum registro alimentar encontrado para este dia.</p>';
+                }
+                // Set up the link to refeicao.html with the date parameter
+                combinedModalViewMealsLink.href = `refeicao.html?date=${encodeURIComponent(clickedDateStr)}`;
+                combinedModalViewMealsLink.style.display = 'inline-block'; // Show the link
+            } catch (error) {
+                console.error("Error fetching date summary:", error);
+                combinedModalSummaryContent.innerHTML = `<p class="error">Erro ao carregar dados: ${error.message || error}</p>`;
+            }
+        }
+        // - Main Function to Show Combined Modal -
+        async function showCombinedModalForDate(clickedDateStr) { // e.g., "2023-10-27"
+            if (!clickedDateStr) return;
+            const dateObj = new Date(clickedDateStr);
+            const options = { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' };
+            const formattedDate = dateObj.toLocaleDateString('pt-BR', options);
+            combinedModalTitle.textContent = `Detalhes para ${formattedDate}`;
+            // Show loading states
+            combinedModalRemindersList.innerHTML = '<li>Carregando lembretes...</li>';
+            combinedModalSummaryContent.innerHTML = '<p>Carregando resumo da alimentação...</p>';
+            combinedModalViewMealsLink.style.display = 'none';
+            // Show the modal
+            combinedModal.style.display = "block";
+            // - Fetch and Display Data -
+            try {
+                // Filter reminders for the clicked date using LOCAL date comparison
+                const remindersForDay = window.fetchedReminders.filter(r => {
+                    if (r.reminder_at) {
+                        try {
+                            // Convert the reminder's reminder_at to local date string for comparison
+                            const rLocalDateStr = new Date(r.reminder_at).toLocaleDateString('sv-SE'); // 'sv-SE' locale outputs YYYY-MM-DD based on LOCAL time
+                            return rLocalDateStr === clickedDateStr; // clickedDateStr is already in YYYY-MM-DD (local)
+                        } catch (e) {
+                            console.error("Error comparing reminder date:", r, e);
+                            return false;
+                        }
+                    }
+                    return false;
+                });
+                // Update reminders section
+                showRemindersInModal(remindersForDay, clickedDateStr);
+                // Update food log summary section
+                await showFoodLogSummaryInModal(clickedDateStr);
+            } catch (error) {
+                console.error("Error preparing combined modal ", error);
+                // Update sections with error messages
+                combinedModalRemindersList.innerHTML = '<li class="error">Erro ao carregar lembretes.</li>';
+                combinedModalSummaryContent.innerHTML = '<p class="error">Erro ao carregar resumo da alimentação.</p>';
+                // Ensure link is hidden on error
+                combinedModalViewMealsLink.style.display = 'none';
+            }
+        }
+        // - Calendar Click Handler -
+        calendarEl.addEventListener('click', (e) => {
+            const dayCell = e.target.closest('.calendar-day:not(.empty):not(.header)'); // Exclude header clicks
+            if (dayCell) {
+                const dateString = dayCell.dataset.date;
+                if (dateString) {
+                    showCombinedModalForDate(dateString);
+                }
+            }
+        });
+        // - Modal Close Handlers -
+        // When the user clicks on <span> (x), close the combined modal
+        combinedModalClose.onclick = function () {
+            combinedModal.style.display = "none";
+        }
+        // When the user clicks anywhere outside of the combined modal, close it
+        window.onclick = function (event) {
+            if (event.target == combinedModal) {
+                combinedModal.style.display = "none";
+            }
+        }
+        // --- Add Reminder Inline Handlers (Corrected) ---
+        // Toggle form visibility
+        addReminderInlineBtn.addEventListener('click', (e) => {
+             e.stopPropagation(); // Prevent other handlers if needed
+             addReminderFormInline.classList.toggle('active');
+             if (addReminderFormInline.classList.contains('active')) {
+                 // Pre-fill date and time inputs
+                 // Get date from modal title (simple extraction)
+                 const titleText = combinedModalTitle.textContent;
+                 const match = titleText.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                 if (match) {
+                     const day = match[1].padStart(2, '0');
+                     const month = match[2].padStart(2, '0');
+                     const year = match[3];
+                     const modalDateKey = `${year}-${month}-${day}`;
+                     newReminderDateInput.value = modalDateKey;
+                 }
+                 newReminderTimeInput.value = '09:00'; // Default time
+                 newReminderTitleInput.focus();
+             }
+        });
+        // Submit new reminder (Corrected Data Format)
+        addReminderSubmitBtn.addEventListener('click', async () => {
+             const title = newReminderTitleInput.value.trim();
+             const description = newReminderDescriptionInput.value.trim();
+             const date = newReminderDateInput.value; // YYYY-MM-DD
+             const time = newReminderTimeInput.value; // HH:MM
+             if (!title) {
+                 alert("O título do lembrete é obrigatório.");
+                 return;
+             }
+             if (!date) {
+                 alert("A data do lembrete é obrigatória.");
+                 return;
+             }
+             if (!time) {
+                 alert("A hora do lembrete é obrigatória.");
+                 return;
+             }
+             try {
+                 // Format data correctly for the backend
+                 // Backend expects: reminder_at: "YYYY-MM-DD", time_of_day: "HH:MM"
+                 const newReminderData = {
+                     title: title,
+                     description: description,
+                     reminder_at: date, // Send date part
+                     time_of_day: time  // Send time part
+                 };
+                 const createdReminder = await apiClient.createReminder(newReminderData);
+                 console.log("New reminder created:", createdReminder);
+                 // Add the new reminder to the global list
+                 window.fetchedReminders.push(createdReminder);
+                 // Close the form
+                 addReminderFormInline.classList.remove('active');
+                 // Clear the form
+                 newReminderTitleInput.value = '';
+                 newReminderDescriptionInput.value = '';
+                 newReminderDateInput.value = '';
+                 newReminderTimeInput.value = '09:00';
+                 // Refresh the calendar view to show the new reminder
+                 await fetchAndRenderCalendar(currentCalendarYear, currentCalendarMonth);
+                 // Get the date from the form input (which was correctly set using local date)
+                 // This ensures the modal re-opens for the correct day
+                 const modalDateKey = newReminderDateInput.value; // This should be in YYYY-MM-DD format from the input
+                 if (modalDateKey) {
+                     // Re-show the modal with updated list for the correct date
+                     await showCombinedModalForDate(modalDateKey);
+                 }
+             } catch (error) {
+                 console.error("Error creating new reminder:", error);
+                 alert("Erro ao criar o novo lembrete. Por favor, tente novamente.");
+             }
+        });
+        // Cancel adding new reminder
+        addReminderCancelBtn.addEventListener('click', () => {
+             addReminderFormInline.classList.remove('active');
+             // Clear the form
+             newReminderTitleInput.value = '';
+             newReminderDescriptionInput.value = '';
+             newReminderDateInput.value = '';
+             newReminderTimeInput.value = '09:00';
+        });
+        // --- UI Update and Auth Functions ---
+        function updateUI(isAuthenticated) {
+            if (isAuthenticated) {
+                authActionsDiv.classList.add('hidden');
+                gatedContentDiv.classList.remove('hidden');
+                // Load calendar data for the current month when authenticated
+                fetchAndRenderCalendar(currentCalendarYear, currentCalendarMonth);
+            } else {
+                authActionsDiv.classList.remove('hidden');
+                gatedContentDiv.classList.add('hidden');
+                calendarEl.innerHTML = '<p>Você precisa estar logado para ver o calendário.</p>';
+            }
+        }
+        function toggleReminderFields() {
+      const typeSelect = document.querySelector('select[name="type"]');
+      const oneTimeFields = document.getElementById('one-time-fields');
+      const recurringFields = document.getElementById('recurring-fields');
+      if (typeSelect && oneTimeFields && recurringFields) {
+        const selectedType = typeSelect.value;
+        oneTimeFields.classList.toggle('hidden', selectedType !== 'one-time');
+        recurringFields.classList.toggle('hidden', selectedType !== 'recurring');
+        // Set required attributes dynamically
+        const reminderAtInput = document.querySelector('input[name="reminder_at"]');
+        const timeOfDayInput = document.querySelector('input[name="time_of_day"]');
+        const daysOfWeekSelect = document.querySelector('select[name="days_of_week"]');
+        if (reminderAtInput) reminderAtInput.required = (selectedType === 'one-time');
+        if (timeOfDayInput) timeOfDayInput.required = (selectedType === 'recurring');
+        if (daysOfWeekSelect) daysOfWeekSelect.required = (selectedType === 'recurring');
+      }
+    }
+        // - Main Logic -
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                // 1. Attempt to get the access token using the auth manager.
+                const token = await getAccessToken();
+                if (token) {
+                    // 2a. If we got a token, the user is authenticated and the token is set on apiClient
+                    console.log("Ready to make authenticated API calls.");
+                    apiClient.setAuthToken(token);
+                    updateUI(true);
+                    // - Event Listeners -
+                    if (btnLogout) {
+                        btnLogout.addEventListener("click", logout);
+                    }
+                    // Add navigation event listeners
+                    if (prevMonthBtn) {
+                        prevMonthBtn.addEventListener('click', () => navigateMonth('prev'));
+                    }
+                    if (nextMonthBtn) {
+                        nextMonthBtn.addEventListener('click', () => navigateMonth('next'));
+                    }
+                } else {
+                    // 2b. If no token, the user is not authenticated
+                    console.log("No token found, user needs to log in.");
+                    updateUI(false);
+                    if (btnLogin) {
+                        btnLogin.addEventListener("click", () => {
+                            // Implement login logic using authManager if needed, or redirect
+                            // For simplicity, assuming authManager handles login redirect
+                             window.location.href = '/login'; // Or use authManager.login()
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Error during initialization:", error);
+                authActionsDiv.innerHTML = `<p class="error">Erro de inicialização: ${error.message}</p>`;
+            }
+        });
+    </script>
+    <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const typeSelect = document.querySelector('select[name="type"]');
+    const oneTimeFields = document.getElementById('one-time-fields');
+    const recurringFields = document.getElementById('recurring-fields');
+
+    function toggleFields() {
+      const selectedType = typeSelect.value;
+      oneTimeFields.classList.toggle('hidden', selectedType !== 'one-time');
+      recurringFields.classList.toggle('hidden', selectedType !== 'recurring');
+    }
+
+    typeSelect.addEventListener('change', toggleFields);
+    toggleFields(); // inicializa com o valor atual
+
+    const reminderForm = document.getElementById("reminder-form");
+    reminderForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(reminderForm);
+      const reminder = Object.fromEntries(formData.entries());
+
+      if (reminder.days_of_week instanceof DOMStringList) {
+        reminder.days_of_week = Array.from(reminder.days_of_week);
+      } else if (formData.getAll("days_of_week")) {
+        reminder.days_of_week = formData.getAll("days_of_week");
+      }
+
+      // Envia o lembrete para a API
+      try {
+        await apiClient.postReminder(reminder);
+        alert("Lembrete adicionado com sucesso!");
+        reminderForm.reset();
+        toggleFields(); // esconde campos novamente
+        loadReminders(); // recarrega lista
+      } catch (error) {
+        console.error("Erro ao adicionar lembrete:", error);
+        alert("Erro ao adicionar lembrete.");
+      }
+    });
+  });
+</script>
+    <script src="script.js"></script>
+</body>
+</html>
