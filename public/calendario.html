@@ -36,7 +36,7 @@ body.processing {
     justify-content: space-between;
     align-items: center;
     padding: 15px 20px;
-    background-color: #007bff; /* Bootstrap primary */
+    background-color: #1B5E20; /* Bootstrap primary */
     color: white;
     font-weight: bold;
     font-size: 1.2rem;
@@ -375,13 +375,52 @@ body.processing {
 .add-reminder-cancel:hover {
     background-color: #5a6268;
 }
+#btn-logout {
+      background-color: #dc3545;
+      display: inline-block;
+      font-size: 1rem;
+      padding: 0.75rem 1.5rem;
+      color: white;
+      text-decoration: none;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      width: fit-content;
+    }
+    #btn-logout:hover {
+      background-color: #c82333;
+    }
+    #btn-run-tests {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+    }
+    #btn-run-tests:hover {
+      background-color: #218838;
+    }
+    .totais-mes {
+  background-color: #f4f4f4;
+  padding: 10px 16px;
+  margin: 12px auto;
+  border-radius: 8px;
+  width: fit-content;
+  font-weight: bold;
+  font-size: 1rem;
+  color: #333;
+}
 /* --- End Updated Reminder List Styling --- */
 /* Food Log Summary */
-#modal-summary-content-combined {
+/*#modal-summary-content-combined {
     /* padding: 10px; */ /* Padding handled by modal-section */
     /* background-color: #f0f8ff; */ /* Light blue background - handled by modal-section */
     /* border-radius: 4px; */ /* Handled by modal-section */
-}
+/*}
 /* Link to detailed meals */
 .modal-link-combined {
     display: inline-block;
@@ -470,24 +509,41 @@ body.processing {
 </style>
 </head>
 <body>
-    <header>
-        <!-- Your header content -->
-    </header>
-    <main>
-        <section class="hero">
-            <div class="hero-content">
-                <h1>Seu Calendário</h1>
-                <p>Acompanhe seus lembretes e registro alimentar.</p>
-                <!-- Removed hero image -->
-            </div>
+    <header class="header">
+    <div class="logo">
+      <a href="index.html">
+        <img src="img/logo.png" alt="Logo Dietamigo" class="logo">
+      </a>
+    </div>
+    <button class="burger" id="burger" aria-label="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <nav class="menu" id="menu">
+      <ul>
+        <li><a href="index.html">🏠 Página Inicial</a></li>
+        <li><a href="login.html">🔐 Log In</a></li>
+        <li><a href="calculo.html">🥗 Dieta</a></li>
+        <li><a href="refeicao.html">🍽️ Pratos</a></li>
+        <li><a href="calendario.html">📅 Calendário</a></li>
+        <li><a href="carreira.html">👔 Carreiras</a></li>
+        <li><a href="sobre.html">ℹ️ Sobre nós</a></li>
+      </ul>
+       <img src="img/logo.png" alt="Logo Dietamigo" class="menu-logo" />
+    </nav>
+  </header>
+    <main class="main-container">
+        <section class="section">
+      <div class="text-content">
+        <h1>Calendario de notificações</h1>
+        <p>Todas as informações do seu consumo e lembretes do mês.</p>
+      </div>
+    </section>
         </section>
         <section class="content">
             <div id="auth-actions">
                 <p>Você precisa estar logado para ver o calendário. <button id="btn-login">Login</button></p>
             </div>
             <div id="gated-content" class="hidden">
-                <p>Você está logado. <button id="btn-logout">Logout</button></p>
-                <hr>
                 <div class="loading-spinner" id="calendar-loading">
                     <div class="spinner"></div>
                     <p>Carregando calendário...</p>
@@ -501,6 +557,11 @@ body.processing {
                     </div>
                     <div id="calendar"><!-- Calendar will be rendered here by JavaScript --></div>
                 </div>
+                <div style="display: flex; justify-content: space-between; width: 100%;">
+                  <a href="refeicao.html" class="cta">Ver suas refeições</a>
+                  <p>Você está logado. <button id="btn-logout">Sair</button></p>
+                 </div>
+                
             </div>
         </section>
     </main>
@@ -577,6 +638,7 @@ body.processing {
         const gatedContentDiv = document.getElementById('gated-content');
         const btnLogin = document.getElementById('btn-login');
         const btnLogout = document.getElementById('btn-logout');
+        const reminderForm = document.getElementById("reminder-form");
         const calendarEl = document.getElementById('calendar');
         const headerEl = document.getElementById('calendar-month-year'); // Updated ID
         const prevMonthBtn = document.getElementById('prev-month');
@@ -1065,6 +1127,23 @@ body.processing {
                 calendarEl.innerHTML = '<p>Você precisa estar logado para ver o calendário.</p>';
             }
         }
+        function toggleReminderFields() {
+      const typeSelect = document.querySelector('select[name="type"]');
+      const oneTimeFields = document.getElementById('one-time-fields');
+      const recurringFields = document.getElementById('recurring-fields');
+      if (typeSelect && oneTimeFields && recurringFields) {
+        const selectedType = typeSelect.value;
+        oneTimeFields.classList.toggle('hidden', selectedType !== 'one-time');
+        recurringFields.classList.toggle('hidden', selectedType !== 'recurring');
+        // Set required attributes dynamically
+        const reminderAtInput = document.querySelector('input[name="reminder_at"]');
+        const timeOfDayInput = document.querySelector('input[name="time_of_day"]');
+        const daysOfWeekSelect = document.querySelector('select[name="days_of_week"]');
+        if (reminderAtInput) reminderAtInput.required = (selectedType === 'one-time');
+        if (timeOfDayInput) timeOfDayInput.required = (selectedType === 'recurring');
+        if (daysOfWeekSelect) daysOfWeekSelect.required = (selectedType === 'recurring');
+      }
+    }
         // - Main Logic -
         document.addEventListener("DOMContentLoaded", async () => {
             try {
@@ -1104,5 +1183,47 @@ body.processing {
             }
         });
     </script>
+    <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const typeSelect = document.querySelector('select[name="type"]');
+    const oneTimeFields = document.getElementById('one-time-fields');
+    const recurringFields = document.getElementById('recurring-fields');
+
+    function toggleFields() {
+      const selectedType = typeSelect.value;
+      oneTimeFields.classList.toggle('hidden', selectedType !== 'one-time');
+      recurringFields.classList.toggle('hidden', selectedType !== 'recurring');
+    }
+
+    typeSelect.addEventListener('change', toggleFields);
+    toggleFields(); // inicializa com o valor atual
+
+    const reminderForm = document.getElementById("reminder-form");
+    reminderForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(reminderForm);
+      const reminder = Object.fromEntries(formData.entries());
+
+      if (reminder.days_of_week instanceof DOMStringList) {
+        reminder.days_of_week = Array.from(reminder.days_of_week);
+      } else if (formData.getAll("days_of_week")) {
+        reminder.days_of_week = formData.getAll("days_of_week");
+      }
+
+      // Envia o lembrete para a API
+      try {
+        await apiClient.postReminder(reminder);
+        alert("Lembrete adicionado com sucesso!");
+        reminderForm.reset();
+        toggleFields(); // esconde campos novamente
+        loadReminders(); // recarrega lista
+      } catch (error) {
+        console.error("Erro ao adicionar lembrete:", error);
+        alert("Erro ao adicionar lembrete.");
+      }
+    });
+  });
+</script>
+    <script src="script.js"></script>
 </body>
 </html>
