@@ -74,32 +74,48 @@ class ApiClient {
     // If needed, a specific admin function could be added.
     // --- Daily Food Log (with Meal Grouping) ---
     //
-/**
- * Fetches the food log for a specific date, grouped into meals.
- * @param {string} [date] - Date in YYYY-MM-DD format. Defaults to today if omitted.
- * @param {number} [limit] - Maximum number of meal groups to return.
- * @param {number} [offset] - Number of meal groups to skip.
- * @returns {Promise<Array>} - A promise that resolves to an array of meal objects.
- *   Each meal: { meal_group_id, logged_at, items: [...] }
- */
-async getFoodLog(date, limit, offset) {
-    const params = new URLSearchParams();
-    
-    if (date) {
-        params.append('date', date);
+    /**
+     * Fetches the food log for a specific date, grouped into meals.
+     * @param {string} [date] - Date in YYYY-MM-DD format. Defaults to today if omitted.
+     * @param {number} [limit] - Maximum number of meal groups to return.
+     * @param {number} [offset] - Number of meal groups to skip.
+     * @returns {Promise<Array>} - A promise that resolves to an array of meal objects.
+     *   Each meal: { meal_group_id, logged_at, items: [...] }
+     */
+    async getFoodLog(date, limit, offset) {
+        const params = new URLSearchParams();
+        
+        if (date) {
+            params.append('date', date);
+        }
+        if (limit !== undefined) {
+            params.append('limit', limit.toString());
+        }
+        if (offset !== undefined) {
+            params.append('offset', offset.toString());
+        }
+        
+        const queryString = params.toString();
+        const url = `/food-log${queryString ? `?${queryString}` : ''}`;
+        
+        return this._request(url);
     }
-    if (limit !== undefined) {
-        params.append('limit', limit.toString());
+
+
+    /**
+     * Fetches the food log for a specific date range, grouped into meals.
+     * @param {string} startDate - Start date in YYYY-MM-DD format.
+     * @param {string} endDate - End date in YYYY-MM-DD format.
+     * @returns {Promise<Array>} - A promise that resolves to an array of objects,
+     *                             each containing { date, meals: [...] }.
+     */
+    async getFoodLogRange(startDate, endDate) {
+        if (!startDate || !endDate) {
+           throw new Error("Both startDate and endDate are required for getFoodLogRange.");
+        }
+        const url = `/food-log/range?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
+        return this._request(url);
     }
-    if (offset !== undefined) {
-        params.append('offset', offset.toString());
-    }
-    
-    const queryString = params.toString();
-    const url = `/food-log${queryString ? `?${queryString}` : ''}`;
-    
-    return this._request(url);
-}
 
     /**
      * Fetches the food log for a specific date, grouped into meals.

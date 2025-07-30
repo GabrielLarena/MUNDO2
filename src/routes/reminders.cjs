@@ -216,7 +216,7 @@ router.patch('/:id', (req, res) => {
     if (days_of_week !== undefined) fields.push('days_of_week = ?'), values.push(days_of_week);
     if (title !== undefined) fields.push('title = ?'), values.push(title);
     if (description !== undefined) fields.push('description = ?'), values.push(description);
-    if (typeof is_checked === 'boolean') fields.push('is_checked = ?'), values.push(is_checked);
+    if (typeof is_checked === 'boolean' || typeof is_checked === 'number') fields.push('is_checked = ?'), values.push(is_checked);
 
     if (fields.length === 0) {
         return res.status(400).json({ message: "No fields provided to update." });

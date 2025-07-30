@@ -269,4 +269,96 @@ router.patch('/:id', (req, res) => {
   }
 });
 
+/*** GET /api/food-log/range
+* Fetches the food log for a date range, grouped into meals.
+* Query params:
+* - startDate (YYYY-MM-DD): Start date (inclusive)
+* - endDate (YYYY-MM-DD): End date (inclusive)
+* Returns:
+* An array of meal objects, grouped by date within the range:
+* [
+*   { date: "YYYY-MM-DD", meals: [ { meal_group_id, logged_at, items: [...] }, ... ] },
+*   ...
+* ]
+* Note: Meals within each date are ordered by meal_group_id and logged_at.*/
+router.get('/range', (req, res) => {
+    const userId = req.auth.payload.sub;
+    const { startDate, endDate } = req.query;
+
+    // Basic validation
+    if (!startDate || !endDate) {
+        return res.status(400).json({ message: "startDate and endDate query parameters are required." });
+    }
+
+    // Optional: Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+        return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
+    }
+
+    // Query to fetch logs within the date range
+    const sql = `
+        SELECT
+            l.id AS log_id,
+            l.user_id,
+            l.log_date,
+            l.food_item_id,
+            l.weight_g,
+            l.logged_at,
+            l.meal_group_id,
+            f.name AS food_name,
+            f.energy_kcal_per_100g,
+            f.protein_g_per_100g,
+            f.carbs_g_per_100g
+        FROM daily_food_log l
+        JOIN food_items f ON l.food_item_id = f.id
+        WHERE l.user_id = ? AND l.log_date BETWEEN ? AND ?
+        ORDER BY l.log_date ASC, l.meal_group_id ASC, l.logged_at ASC
+    `;
+
+    const params = [userId, startDate, endDate];
+
+    const stmt = db.prepare(sql);
+    try {
+        const logs = stmt.all(...params);
+
+        // Group logs into meals based on meal_group_id
+        const mealsByDateMap = new Map(); // Key: log_date string, Value: Map of meals for that date
+        logs.forEach(log => {
+            const dateStr = log.log_date;
+            if (!mealsByDateMap.has(dateStr)) {
+                mealsByDateMap.set(dateStr, new Map()); // Inner map for meals of this date
+            }
+            const mealsMapForDate = mealsByDateMap.get(dateStr);
+
+            if (!mealsMapForDate.has(log.meal_group_id)) {
+                mealsMapForDate.set(log.meal_group_id, {
+                    meal_group_id: log.meal_group_id,
+                    logged_at: log.logged_at,
+                    items: []
+                });
+            }
+            mealsMapForDate.get(log.meal_group_id).items.push(log);
+        });
+
+        // Convert grouped data into the desired output format
+        const result = [];
+        mealsByDateMap.forEach((mealsMapForDate, dateStr) => {
+             const mealsArray = Array.from(mealsMapForDate.values());
+             result.push({
+                 date: dateStr,
+                 meals: mealsArray
+             });
+        });
+
+        // Sort the final result by date ascending
+        result.sort((a, b) => a.date.localeCompare(b.date));
+
+        res.json(result);
+    } catch (err) {
+        console.error("Error fetching food log range:", err);
+        res.status(500).json({ message: "Internal server error while fetching food log range." });
+    }
+});
+
 module.exports = router;
